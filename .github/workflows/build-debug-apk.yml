@@ -22,7 +22,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - uses: android-actions/setup-android@v3
       - name: Install native build dependencies
         run: |
           sudo apt-get update
