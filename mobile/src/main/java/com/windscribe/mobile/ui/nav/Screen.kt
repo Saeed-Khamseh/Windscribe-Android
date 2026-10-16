@@ -13,6 +13,8 @@ sealed class Screen(
 
     object Home : Screen("home")
 
+    object AutoScanner : Screen("auto_scanner")
+
     object NoEmailAttention : Screen("no_email_attention")
 
     object Newsfeed : Screen("newsfeed")

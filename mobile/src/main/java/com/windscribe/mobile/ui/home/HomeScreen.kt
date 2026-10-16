@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -336,6 +337,7 @@ private fun CompactUI(
     bridgeApiViewModel: BridgeApiViewModel,
 ) {
     ForceStatusBarIcons(true)
+    val scannerNav = LocalNavController.current
     val searchState by serverViewModel.showSearchView.collectAsState()
     Background {
         ConnectedBackground(connectionViewmodel)
@@ -360,6 +362,11 @@ private fun CompactUI(
             contentAlignment = Alignment.TopEnd,
         ) {
             AppConnectButton(connectionViewmodel)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(top = 114.dp, end = 16.dp), contentAlignment = Alignment.TopEnd) {
+            OutlinedButton(onClick = { scannerNav.navigate(Screen.AutoScanner.route) }) {
+                Text("AutoScribe")
+            }
         }
         if (searchState) {
             SearchServerList(serverViewModel, connectionViewmodel, homeViewmodel)

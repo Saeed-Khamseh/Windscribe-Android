@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - '.github/workflows/build-debug-apk.yml'
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
