@@ -23,6 +23,10 @@ on:
       - 'gradle/**'
   workflow_dispatch:
 
+concurrency:
+  group: android-debug-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -54,7 +58,8 @@ jobs:
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
       - name: Test network scanner
         run: |
-          bash ./gradlew :base:testFdroidDebugUnitTest --tests 'com.windscribe.vpn.scanner.*' -PabiFilter=arm64-v8a --stacktrace --no-daemon
+          set -o pipefail
+          bash ./gradlew :base:testFdroidDebugUnitTest --tests 'com.windscribe.vpn.scanner.*' -PabiFilter=arm64-v8a --stacktrace --no-daemon --console=plain 2>&1 | tee scanner-tests.log
       - name: Upload scanner test reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -65,7 +70,25 @@ jobs:
       - name: Build F-Droid debug APK (ARM64)
         run: |
           chmod +x ./gradlew
-          ./gradlew :mobile:assembleFdroidDebug -PabiFilter=arm64-v8a --stacktrace --no-daemon
+          set -o pipefail
+          ./gradlew :mobile:assembleFdroidDebug -PabiFilter=arm64-v8a --stacktrace --no-daemon --console=plain 2>&1 | tee scanner-build.log
+      - name: Summarize scanner validation
+        if: always()
+        run: |
+          python3 - <<'PYTHON'
+          import glob, os, xml.etree.ElementTree as ET
+          totals = dict(tests=0, failures=0, errors=0, skipped=0)
+          for path in glob.glob('base/build/test-results/testFdroidDebugUnitTest/TEST-com.windscribe.vpn.scanner.*.xml'):
+              root = ET.parse(path).getroot()
+              for key in totals:
+                  totals[key] += int(root.get(key, 0))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('### Scanner tests\n' + str(totals) + '\n')
+              for path in ['scanner-tests.log', 'scanner-build.log']:
+                  if os.path.exists(path):
+                      lines = open(path).readlines()
+                      summary.write('\n### ' + path + '\n```text\n' + ''.join(lines[-100:]) + '\n```\n')
+          PYTHON
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
