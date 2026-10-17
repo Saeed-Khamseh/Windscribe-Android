@@ -12,6 +12,7 @@ import com.windscribe.vpn.scanner.ScanSettings
 import com.windscribe.vpn.state.DeviceStateManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -54,6 +55,7 @@ class ScannerViewModelImpl
         override val ports = scanner.ports
         override val progress = scanner.progress
         override val active = scanner.session.active
+        private var pendingUpdate: Job? = null
         override val loading = MutableStateFlow(true)
         override val error = MutableStateFlow<String?>(null)
 
@@ -75,13 +77,18 @@ class ScannerViewModelImpl
         }
 
         override fun update(transform: (ScanSettings) -> ScanSettings) {
-            viewModelScope.launch(Dispatchers.IO) {
-                try {
-                    scanner.updateSettings(transform)
-                } catch (exception: Exception) {
-                    error.value = exception.message
+            val previous = pendingUpdate
+            pendingUpdate =
+                viewModelScope.launch(Dispatchers.IO) {
+                    previous?.join()
+                    try {
+                        scanner.updateSettings(transform)
+                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        throw cancelled
+                    } catch (exception: Exception) {
+                        error.value = exception.message
+                    }
                 }
-            }
         }
 
         override fun start(
@@ -89,17 +96,20 @@ class ScannerViewModelImpl
             route: ScanRoute?,
         ) {
             if (loading.value || active.value) return
-            val problem = scanner.preflight()
-            if (problem != null) {
-                error.value = problem
-                return
-            }
-            try {
-                NetworkScanService.start(context, route)
-            } catch (
-                exception: Exception,
-            ) {
-                error.value = exception.message ?: "Unable to start scanner"
+            viewModelScope.launch {
+                // Honor every selection made before Start, even if its Room write is still pending.
+                pendingUpdate?.join()
+                if (active.value) return@launch
+                val problem = scanner.preflight(route)
+                if (problem != null) {
+                    error.value = problem
+                    return@launch
+                }
+                try {
+                    NetworkScanService.start(context, route)
+                } catch (exception: Exception) {
+                    error.value = exception.message ?: "Unable to start scanner"
+                }
             }
         }
 

@@ -108,10 +108,10 @@ class NetworkScanner
                 store.save(checkpoint)
             }
 
-        fun preflight(): String? =
+        fun preflight(route: ScanRoute? = null): String? =
             when {
                 preferences.splitTunnelToggle -> "Turn off split tunneling before scanning so probes travel through the VPN."
-                !settings.value.isValid() -> "Choose at least one location, protocol, and port, and check advanced settings."
+                route == null && !settings.value.isValid() -> "Choose at least one location, protocol, and port, and check advanced settings."
                 else ->
                     runCatching {
                         driver.networkKey()

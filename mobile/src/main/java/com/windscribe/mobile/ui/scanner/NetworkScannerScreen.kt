@@ -130,6 +130,7 @@ import com.windscribe.vpn.scanner.ScanStep
 import com.windscribe.vpn.scanner.buildScanPlan
 import com.windscribe.vpn.scanner.rankedResults
 import com.windscribe.vpn.scanner.scanCsv
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -184,7 +185,6 @@ fun NetworkScannerScreen(viewModel: ScannerViewModel) {
     }
     LaunchedEffect(export) {
         if (!export) return@LaunchedEffect
-        export = false
         try {
             val uri =
                 withContext(Dispatchers.IO) {
@@ -202,8 +202,12 @@ fun NetworkScannerScreen(viewModel: ScannerViewModel) {
                     shareTitle,
                 ),
             )
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (exception: Exception) {
             permissionError = exception.message
+        } finally {
+            export = false
         }
     }
     val navController = LocalNavController.current
@@ -588,7 +592,7 @@ private fun ScanLive(
                                 step == progress.step ->
                                     CircularProgressIndicator(
                                         Modifier.size(18.dp),
-                                        color = AppColors.cyberBlue,
+                                        color = MaterialTheme.colorScheme.colorForTheme(AppColors.cyberBlue, AppColors.mediumBlue),
                                         strokeWidth = 2.dp,
                                     )
                                 else ->
