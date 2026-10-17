@@ -1,0 +1,50 @@
+Source workflow run: 39065280268
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:17.2008424Z > Task :base:compileFdroidDebugKotlin
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:23.4010795Z e: file:///home/runner/work/Windscribe-Android/Windscribe-Android/base/src/main/java/com/windscribe/vpn/backend/utils/WindVpnController.kt:444:106 Argument type mismatch: actual type is 'String?', but 'String' was expected.
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:23.4050701Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:23.4051362Z > Task :base:compileFdroidDebugKotlin FAILED
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.2006272Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.2007311Z [Incubating] Problems report is available at: file:///home/runner/work/Windscribe-Android/Windscribe-Android/build/reports/problems/problems-report.html
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3011188Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3011789Z FAILURE: Build failed with an exception.
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3012328Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3015875Z * What went wrong:
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3016962Z Execution failed for task ':base:compileFdroidDebugKotlin' (registered by plugin 'com.android.internal.library').
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3021086Z > A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3023223Z    > Compilation error. See log for more details
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3023832Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3024144Z * Try:
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3109901Z 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3112272Z Caused by: org.gradle.workers.internal.DefaultWorkerExecutor$WorkExecutionException: A failure occurred while executing org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3114577Z 	at org.gradle.workers.internal.DefaultWorkerExecutor$WorkItemExecution.waitForCompletion(DefaultWorkerExecutor.java:278)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3116442Z 	at org.gradle.internal.work.DefaultAsyncWorkTracker.lambda$waitForItemsAndGatherFailures$2(DefaultAsyncWorkTracker.java:132)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3117835Z 	at org.gradle.internal.Factories$1.create(Factories.java:30)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3119224Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$withoutLocksBlocking$3(DefaultWorkerLeaseService.java:410)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3121036Z 	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3403046Z 	... 30 more
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3403795Z Caused by: org.jetbrains.kotlin.gradle.tasks.CompilationErrorException: Compilation error. See log for more details
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3405109Z 	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwExceptionIfCompilationFailed(tasksUtils.kt:21)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3406511Z 	at org.jetbrains.kotlin.compilerRunner.btapi.BuildToolsApiCompilationWork.execute(BuildToolsApiCompilationWork.kt:295)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3407779Z 	at org.gradle.workers.internal.DefaultWorkerServer.execute(DefaultWorkerServer.java:68)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3408871Z 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:64)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3410021Z 	at org.gradle.workers.internal.NoIsolationWorkerFactory$1$1.create(NoIsolationWorkerFactory.java:61)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3429951Z 	at org.gradle.workers.internal.DefaultWorkerExecutor.lambda$submitWork$0(DefaultWorkerExecutor.java:174)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3431682Z 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runExecution(DefaultConditionalExecutionQueue.java:191)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3433409Z 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.access$500(DefaultConditionalExecutionQueue.java:112)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3435067Z 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner$1.run(DefaultConditionalExecutionQueue.java:168)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3436603Z 	at org.gradle.internal.Factories$1.create(Factories.java:30)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3437727Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.lambda$runAndReleaseLocks$0(DefaultWorkerLeaseService.java:300)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3439116Z 	at org.gradle.internal.work.ResourceLockStatistics$1.measure(ResourceLockStatistics.java:43)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3440684Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.runAndReleaseLocks(DefaultWorkerLeaseService.java:298)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3442167Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocksAcquired(DefaultWorkerLeaseService.java:294)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3443552Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.withLocks(DefaultWorkerLeaseService.java:286)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3445037Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:130)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3446517Z 	at org.gradle.internal.work.DefaultWorkerLeaseService.runAsWorkerThread(DefaultWorkerLeaseService.java:135)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3448159Z 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.runBatch(DefaultConditionalExecutionQueue.java:163)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3449939Z 	at org.gradle.internal.work.DefaultConditionalExecutionQueue$ExecutionRunner.run(DefaultConditionalExecutionQueue.java:125)
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3451162Z 	... 2 more
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3451330Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3451340Z
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3451485Z BUILD FAILED in 5m 34s
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.3451906Z 119 actionable tasks: 105 executed, 14 from cache
+build	Build F-Droid debug APK (ARM64)	2026-10-17T20:12:42.7277933Z ##[error]Process completed with exit code 1.
