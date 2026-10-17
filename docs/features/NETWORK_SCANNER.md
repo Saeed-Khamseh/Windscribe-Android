@@ -18,7 +18,7 @@ Settings and completed results are stored in a private Room database, `network-s
 
 ## Validation
 
-The GitHub Actions debug-APK workflow runs `:base:testFdroidDebugUnitTest --tests 'com.windscribe.vpn.scanner.*'` and builds the ARM64 F-Droid debug APK. The tests exercise sequential tests, timeouts, cancellation during connect/probe, tunnel loss, network changes, resume filtering, priority, packet loss, CSV escaping, and connection ownership including late launches. They use a fake driver; they do not establish device VPN behavior.
+The GitHub Actions debug-APK workflow runs `:base:testFdroidDebugUnitTest --tests 'com.windscribe.vpn.scanner.*'` and the scanner Compose tests in `:mobile:testFdroidDebugUnitTest`, then builds the ARM64 F-Droid debug APK. The tests exercise sequential tests, timeouts, cancellation during connect/probe, tunnel loss, network changes, resume filtering, priority, packet loss, CSV escaping, and connection ownership including late launches. Compose tests check valid/empty setup, the scan lock, and connecting the exact ranked route. Engine tests use a fake driver; they do not establish device VPN behavior.
 
 Device acceptance checks, requiring a signed-in account and an Android device:
 

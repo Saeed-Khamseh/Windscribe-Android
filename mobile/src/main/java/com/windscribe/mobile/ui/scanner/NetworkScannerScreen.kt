@@ -99,6 +99,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -346,7 +347,7 @@ fun ScannerContent(
                                 Spacer(Modifier.width(12.dp))
                                 Column {
                                     Label(networkLabel ?: stringResource(R.string.scanner_current_network), bold = true)
-                                    Label(stringResource(R.string.scanner_title), secondary = true)
+                                    Label(stringResource(R.string.scanner_network_scope), secondary = true)
                                 }
                             }
                         }
@@ -1052,6 +1053,7 @@ private fun Label(
         style = if (secondary) font14 else font16,
         color = if (secondary) MaterialTheme.colorScheme.preferencesSubtitleColor else MaterialTheme.colorScheme.primaryTextColor,
         fontWeight = if (bold) FontWeight.SemiBold else FontWeight.Normal,
+        textAlign = TextAlign.Start,
     )
 }
 

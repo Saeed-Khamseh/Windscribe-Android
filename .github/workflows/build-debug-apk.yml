@@ -60,12 +60,18 @@ jobs:
         run: |
           set -o pipefail
           bash ./gradlew :base:testFdroidDebugUnitTest --tests 'com.windscribe.vpn.scanner.*' -PabiFilter=arm64-v8a --stacktrace --no-daemon --console=plain 2>&1 | tee scanner-tests.log
+      - name: Test scanner Compose screens
+        run: |
+          set -o pipefail
+          bash ./gradlew :mobile:testFdroidDebugUnitTest --tests 'com.windscribe.mobile.ui.scanner.*' -PabiFilter=arm64-v8a --stacktrace --no-daemon --console=plain 2>&1 | tee scanner-ui-tests.log
       - name: Upload scanner test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: network-scanner-tests
-          path: base/build/reports/tests/testFdroidDebugUnitTest/
+          path: |
+            base/build/reports/tests/testFdroidDebugUnitTest/
+            mobile/build/reports/tests/testFdroidDebugUnitTest/
           if-no-files-found: warn
       - name: Build F-Droid debug APK (ARM64)
         run: |
@@ -78,16 +84,17 @@ jobs:
           python3 - <<'PYTHON'
           import glob, os, xml.etree.ElementTree as ET
           totals = dict(tests=0, failures=0, errors=0, skipped=0)
-          for path in glob.glob('base/build/test-results/testFdroidDebugUnitTest/TEST-com.windscribe.vpn.scanner.*.xml'):
+          for path in glob.glob('*/build/test-results/testFdroidDebugUnitTest/TEST-com.windscribe.*scanner.*.xml'):
               root = ET.parse(path).getroot()
               for key in totals:
                   totals[key] += int(root.get(key, 0))
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
               summary.write('### Scanner tests\n' + str(totals) + '\n')
-              for path in ['scanner-tests.log', 'scanner-build.log']:
+              for path in ['scanner-tests.log', 'scanner-ui-tests.log', 'scanner-build.log']:
                   if os.path.exists(path):
                       lines = open(path).readlines()
-                      summary.write('\n### ' + path + '\n```text\n' + ''.join(lines[-100:]) + '\n```\n')
+                      important = [line for line in lines if line.startswith('e: ') or 'error:' in line or ' FAILED' in line or 'What went wrong' in line]
+                      summary.write('\n### ' + path + '\n```text\n' + ''.join(important[-60:] + lines[-100:]) + '\n```\n')
           PYTHON
       - name: Upload APK
         if: success()

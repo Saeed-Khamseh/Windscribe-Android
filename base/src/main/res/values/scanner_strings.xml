@@ -1,4 +1,5 @@
 <resources>
+    <string name="scanner_network_scope">Results apply to this network.</string>
     <string name="scanner_drag">Hold and drag to reorder</string>
     <string name="scanner_title">Network Scanner</string>
     <string name="scanner_subtitle">Find a route that works here.</string>

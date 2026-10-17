@@ -68,6 +68,9 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
     lint {
         abortOnError = false
         checkReleaseBuilds = false
@@ -141,6 +144,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
     testImplementation("junit:junit:${libs.versions.junit.get()}")
     implementation("androidx.navigation:navigation-compose:${libs.versions.navigation.get()}")
     implementation("androidx.compose.material3.adaptive:adaptive:1.2.0")
