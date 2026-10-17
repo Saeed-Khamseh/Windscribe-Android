@@ -19,6 +19,7 @@ import com.windscribe.vpn.R
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -66,7 +67,8 @@ class NetworkScanService : Service() {
                 acquire()
             }
         scanJob =
-            scope.launch {
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                // Enter try/finally before Stop can cancel a not-yet-dispatched job.
                 val updates = launch { scanner.progress.collect { notifications?.notify(NOTIFICATION_ID, notification(it)) } }
                 try {
                     scanner.load()
