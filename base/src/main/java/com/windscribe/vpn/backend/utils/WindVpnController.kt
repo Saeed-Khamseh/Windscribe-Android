@@ -441,7 +441,7 @@ open class WindVpnController
                 throw e
             } catch (e: Exception) {
                 if (isScanRunning) {
-                    disconnect(error = VPNState.Error(error = VPNState.ErrorType.GenericError, message = e.message))
+                    disconnect(error = VPNState.Error(error = VPNState.ErrorType.GenericError, message = e.message ?: "VPN route failed"))
                 } else if (e is InvalidVPNConfigException) {
                     handleVPNError(e.error, connectionId, selectedProtocol)
                 } else {
