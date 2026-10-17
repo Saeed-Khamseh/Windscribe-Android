@@ -57,6 +57,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.slf4j.LoggerFactory
 import java.util.UUID
 import javax.inject.Inject
@@ -83,12 +85,15 @@ open class WindVpnController
         private val scanSession: ScanSession = ScanSession(),
     ) {
         private val logger = LoggerFactory.getLogger("vpn")
+        private val profileMutex = Mutex()
         val isScanRunning: Boolean get() = scanSession.active.value
 
         /** Scanner-only disconnect; normal controls are disabled while the session owns the VPN. */
         suspend fun disconnectForScanner() {
             check(isScanRunning)
-            disconnect(error = VPNState.Error(error = VPNState.ErrorType.UserDisconnect))
+            profileMutex.withLock {
+                disconnect(error = VPNState.Error(error = VPNState.ErrorType.UserDisconnect))
+            }
         }
 
         private suspend fun createVPNProfile(
@@ -124,7 +129,7 @@ open class WindVpnController
         ) {
             if (!scanSession.allows(connectionId)) return
             if (isScanRunning && VpnService.prepare(appContext) != null) {
-                disconnectForScanner()
+                disconnect(error = VPNState.Error(error = VPNState.ErrorType.UserDisconnect))
                 return
             }
             try {
@@ -409,7 +414,9 @@ open class WindVpnController
             selectedProtocol: ProtocolInformation? = null,
             attempt: Int = 0,
             hostname: String? = null,
-        ) {
+        ) = profileMutex.withLock {
+            // A profile request queued before a scan cannot overwrite its selected route.
+            if (!scanSession.allows(connectionId)) return@withLock
             try {
                 logger.debug("Connecting to VPN with connectionId: $connectionId")
                 setLocationToConnect()

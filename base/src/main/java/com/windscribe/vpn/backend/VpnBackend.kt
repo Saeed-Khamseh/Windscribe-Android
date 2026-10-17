@@ -183,7 +183,7 @@ abstract class VpnBackend(
             mainScope.launch {
                 try {
                     val selectedIp = preferencesHelper.selectedIp
-                    val pinnedLocation = if (appContext.vpnController.isScanRunning) null else getPinnedIpForSelectedCity()
+                    val pinnedLocation = getPinnedIpForSelectedCity()
                     val shouldCheckPinning = pinnedLocation?.second != null
                     val hasPinnedNodeMismatch =
                         shouldCheckPinning &&
@@ -327,6 +327,7 @@ abstract class VpnBackend(
     }
 
     suspend fun getPinnedIpForSelectedCity(): Pair<String, String>? {
+        if (appContext.vpnController.isScanRunning) return null
         val selectedCity = preferencesHelper.selectedCity
         val favourite =
             localDbInterface.getFavouritesAsync().firstOrNull {

@@ -120,6 +120,13 @@ class AndroidScanDriver
                     check(isRouteConnected())
                     val network = checkNotNull(connectivity.activeNetwork)
                     val address = network.getAllByName(target).first()
+                    check(
+                        !address.isAnyLocalAddress &&
+                            !address.isLoopbackAddress &&
+                            !address.isLinkLocalAddress &&
+                            !address.isSiteLocalAddress &&
+                            !address.isMulticastAddress,
+                    ) { "Use a public ping target" }
                     val started = SystemClock.elapsedRealtime()
                     Ping.run(address, 2_000, network)
                     (SystemClock.elapsedRealtime() - started).toInt()

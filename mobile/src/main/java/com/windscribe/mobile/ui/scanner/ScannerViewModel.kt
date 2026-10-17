@@ -62,6 +62,7 @@ class ScannerViewModelImpl
         }
 
         override fun refresh() {
+            if (!active.value) loading.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 try {
                     scanner.load()
