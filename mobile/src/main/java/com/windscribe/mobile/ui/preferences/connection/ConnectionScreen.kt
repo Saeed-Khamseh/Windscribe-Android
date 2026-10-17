@@ -247,6 +247,8 @@ fun ConnectionContent(
                         .navigationBarsPadding()
                         .verticalScroll(scrollState),
             ) {
+                ConnectionItem(R.string.scanner_title, Screen.NetworkScanner)
+                Spacer(modifier = Modifier.height(16.dp))
                 ConnectionItem(
                     R.string.network_options,
                     Screen.NetworkOptions,

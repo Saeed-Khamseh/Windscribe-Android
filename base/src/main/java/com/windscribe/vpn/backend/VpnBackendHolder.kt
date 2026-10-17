@@ -16,6 +16,7 @@ import com.windscribe.vpn.backend.ikev2.IKev2VpnBackend
 import com.windscribe.vpn.backend.openvpn.OpenVPNBackend
 import com.windscribe.vpn.backend.wireguard.WireGuardVpnProfile
 import com.windscribe.vpn.backend.wireguard.WireguardBackend
+import com.windscribe.vpn.scanner.ScanSession
 import de.blinkt.openvpn.VpnProfile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -31,6 +32,7 @@ class VpnBackendHolder(
     private val iKev2VpnBackend: IKev2VpnBackend,
     private val wireguardBackend: WireguardBackend,
     private val openVPNBackend: OpenVPNBackend,
+    private val scanSession: ScanSession = ScanSession(),
 ) {
     var activeBackend: VpnBackend? = null
     private val vpnLogger = LoggerFactory.getLogger("vpn")
@@ -77,6 +79,7 @@ class VpnBackendHolder(
                 vpnLogger.debug("Active VPN backend found.")
                 delay(100)
             }
+            if (!scanSession.allows(connectionId)) return@launch
             activeBackend = getBackend()
             activeBackend?.let {
                 it.activate()

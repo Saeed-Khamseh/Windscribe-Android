@@ -24,6 +24,7 @@ class ShortcutStateManager(
     private var initilized = false
 
     fun connect() {
+        if (windVpnController.isScanRunning) return
         if (initilized) {
             preferencesHelper.globalUserConnectionPreference = true
             logger.debug("Connecting from shortcut.")

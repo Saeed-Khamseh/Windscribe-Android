@@ -69,6 +69,15 @@
             </intent-filter>
         </service>
         <service
+            android:name=".scanner.NetworkScanService"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-initiated VPN route scanner: sequential VPN connections and tunnel reachability measurements with a persistent progress notification and Stop action" />
+        </service>
+        <service
             android:name=".services.DisconnectService"
             android:exported="false" />
         <service

@@ -51,6 +51,7 @@ class VpnTileService : TileService() {
 
     override fun onClick() {
         super.onClick()
+        if (vpnController.isScanRunning) return
         logger.debug("Quick tile icon clicked....")
         if (vpnConnectionStateManager.isVPNActive()) {
             preferencesHelper.globalUserConnectionPreference = false

@@ -63,6 +63,9 @@ import com.windscribe.mobile.ui.preferences.network_options.NetworkOptionsScreen
 import com.windscribe.mobile.ui.preferences.robert.RobertScreen
 import com.windscribe.mobile.ui.preferences.split_tunnel.SplitTunnelScreen
 import com.windscribe.mobile.ui.preferences.ticket.TicketScreen
+import com.windscribe.mobile.ui.scanner.NetworkScannerScreen
+import com.windscribe.mobile.ui.scanner.ScannerViewModel
+import com.windscribe.mobile.ui.scanner.ScannerViewModelImpl
 import com.windscribe.mobile.ui.upgrade.UpgradeScreen
 import com.windscribe.mobile.ui.upgrade.UpgradeSuccessScreen
 
@@ -90,24 +93,35 @@ private fun navArgs(): SavedStateHandle? = LocalNavController.current.previousBa
 fun NavigationStack(startDestination: Screen) {
     val navController = rememberNavController()
     val activity = LocalActivity.current as AppStartActivity
+    val scanner: ScannerViewModel = hiltViewModel<ScannerViewModelImpl>()
+    val scanActive by scanner.active.collectAsState()
     activity.navController = navController
     // Honour deep links the host activity stashed from an intent (e.g. a promo push -> Upgrade).
     // Collected here because the intent is handled in onCreate before this NavHost composes.
     val pendingDeepLink by activity.viewmodel.pendingDeepLinkRoute.collectAsState()
-    LaunchedEffect(pendingDeepLink) {
-        pendingDeepLink?.let { route ->
+    LaunchedEffect(pendingDeepLink, scanActive) {
+        pendingDeepLink?.takeUnless { scanActive }?.let { route ->
             navController.navigate(route)
             activity.viewmodel.clearPendingDeepLink()
         }
     }
     CompositionLocalProvider(LocalNavController provides navController) {
-        NavHost(navController = navController, startDestination = startDestination.route) {
-            addNavigationScreens()
+        // Removing the ordinary destinations from composition prevents their controls and
+        // connection dialogs from handling input while the foreground scanner owns the VPN.
+        if (scanActive) {
+            NetworkScannerScreen(scanner)
+        } else {
+            NavHost(navController = navController, startDestination = startDestination.route) {
+                addNavigationScreens(scanner)
+            }
         }
     }
 }
 
-private fun NavGraphBuilder.addNavigationScreens() {
+private fun NavGraphBuilder.addNavigationScreens(scanner: ScannerViewModel) {
+    slidingComposable(route = Screen.NetworkScanner.route) {
+        NetworkScannerScreen(scanner)
+    }
     composable(route = Screen.Start.route) {
         AppStartScreen()
     }

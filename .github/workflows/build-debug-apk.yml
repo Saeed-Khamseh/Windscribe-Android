@@ -4,6 +4,23 @@ on:
   push:
     paths:
       - '.github/workflows/build-debug-apk.yml'
+      - 'base/**'
+      - 'mobile/**'
+      - 'common/**'
+      - 'openvpn/**'
+      - 'wgtunnel/**'
+      - 'strongswan/**'
+      - '*.gradle.kts'
+      - 'gradle/**'
+      - 'gradle.properties'
+  pull_request:
+    paths:
+      - '.github/workflows/build-debug-apk.yml'
+      - 'base/**'
+      - 'mobile/**'
+      - 'common/**'
+      - '*.gradle.kts'
+      - 'gradle/**'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +52,16 @@ jobs:
           echo "Using $SDKMANAGER"
           yes | "$SDKMANAGER" --licenses > /dev/null || true
           "$SDKMANAGER" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;27.2.12479018' 'cmake;3.22.1'
+      - name: Test network scanner
+        run: |
+          bash ./gradlew :base:testFdroidDebugUnitTest --tests 'com.windscribe.vpn.scanner.*' -PabiFilter=arm64-v8a --stacktrace --no-daemon
+      - name: Upload scanner test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: network-scanner-tests
+          path: base/build/reports/tests/testFdroidDebugUnitTest/
+          if-no-files-found: warn
       - name: Build F-Droid debug APK (ARM64)
         run: |
           chmod +x ./gradlew

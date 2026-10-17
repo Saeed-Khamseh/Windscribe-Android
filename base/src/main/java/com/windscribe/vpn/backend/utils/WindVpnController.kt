@@ -45,12 +45,14 @@ import com.windscribe.vpn.repository.CallResult
 import com.windscribe.vpn.repository.EmergencyConnectRepository
 import com.windscribe.vpn.repository.LocationRepository
 import com.windscribe.vpn.repository.WgConfigRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.serverlist.entity.Server
 import com.windscribe.vpn.services.canAccessNetworkName
 import com.windscribe.vpn.services.startAutoConnectService
 import com.windscribe.vpn.state.DeviceStateManager
 import com.windscribe.vpn.state.VPNConnectionStateManager
 import dagger.Lazy
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.takeWhile
@@ -78,8 +80,16 @@ open class WindVpnController
         private val localDbInterface: LocalDbInterface,
         private val deviceStateManager: DeviceStateManager,
         private val excludedIpHolder: ExcludedIpHolder,
+        private val scanSession: ScanSession = ScanSession(),
     ) {
         private val logger = LoggerFactory.getLogger("vpn")
+        val isScanRunning: Boolean get() = scanSession.active.value
+
+        /** Scanner-only disconnect; normal controls are disabled while the session owns the VPN. */
+        suspend fun disconnectForScanner() {
+            check(isScanRunning)
+            disconnect(error = VPNState.Error(error = VPNState.ErrorType.UserDisconnect))
+        }
 
         private suspend fun createVPNProfile(
             protocolInformation: ProtocolInformation,
@@ -112,6 +122,11 @@ open class WindVpnController
             protocolInformation: ProtocolInformation,
             connectionId: UUID,
         ) {
+            if (!scanSession.allows(connectionId)) return
+            if (isScanRunning && VpnService.prepare(appContext) != null) {
+                disconnectForScanner()
+                return
+            }
             try {
                 if (VpnService.prepare(appContext) == null) {
                     logger.debug("VPN Permission available.")
@@ -196,7 +211,14 @@ open class WindVpnController
                 randomIndex = forcedNodeIndex
             }
             val selectedNode: Server =
-                if (pinnedNode != null && attempt == 0) pinnedNode else nodes[randomIndex]
+                if (isScanRunning) {
+                    nodes.firstOrNull { it.hostname == hostname }
+                        ?: throw Exception("Selected scanner node is no longer available")
+                } else if (pinnedNode != null && attempt == 0) {
+                    pinnedNode
+                } else {
+                    nodes[randomIndex]
+                }
             logger.debug("{}", selectedNode)
             lastUsedRandomIndex = randomIndex
             val coordinatesArray = (city.coordinates ?: "").split(",".toRegex()).toTypedArray()
@@ -310,6 +332,7 @@ open class WindVpnController
         }
 
         fun connectAsync() {
+            if (isScanRunning) return
             scope.launch {
                 connect()
             }
@@ -319,6 +342,7 @@ open class WindVpnController
             waitForNextProtocol: Boolean = false,
             reconnecting: Boolean = false,
         ) {
+            if (isScanRunning) return
             scope.launch {
                 disconnect(
                     waitForNextProtocol,
@@ -336,6 +360,7 @@ open class WindVpnController
             reconnecting: Boolean = false,
             error: VPNState.Error?,
         ) {
+            if (isScanRunning) return
             scope.launch {
                 disconnect(waitForNextProtocol, reconnecting, error)
             }
@@ -350,6 +375,7 @@ open class WindVpnController
             attempt: Int = 0,
             hostname: String? = null,
         ) {
+            if (!scanSession.allows(connectionId)) return
             when {
                 // Disconnect from VPN and connect to next selected location.
                 vpnBackendHolder.activeBackend?.active == true -> {
@@ -404,8 +430,12 @@ open class WindVpnController
                 val profileToConnect = createVPNProfile(protocolInformation, attempt, hostname)
                 logger.info("Location: $profileToConnect")
                 launchVPNService(protocolInformation, connectionId)
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                if (e is InvalidVPNConfigException) {
+                if (isScanRunning) {
+                    disconnect(error = VPNState.Error(error = VPNState.ErrorType.GenericError, message = e.message))
+                } else if (e is InvalidVPNConfigException) {
                     handleVPNError(e.error, connectionId, selectedProtocol)
                 } else {
                     logger.debug(e.message)
@@ -481,6 +511,7 @@ open class WindVpnController
         }
 
         private fun checkForReconnect() {
+            if (isScanRunning) return
             if (!appContext.canAccessNetworkName()) {
                 return
             }

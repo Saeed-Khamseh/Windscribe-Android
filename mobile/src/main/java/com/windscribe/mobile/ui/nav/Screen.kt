@@ -67,6 +67,8 @@ sealed class Screen(
 
     object Advance : Screen("advance")
 
+    object NetworkScanner : Screen("network_scanner")
+
     object NetworkOptions : Screen("network_options")
 
     object NetworkDetails : Screen("network_details")

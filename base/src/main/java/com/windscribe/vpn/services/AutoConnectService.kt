@@ -97,6 +97,7 @@ class AutoConnectService : Service() {
         // Observe network info changes via flow
         serviceScope.launch {
             networkInfoManager.networkInfo.collectLatest { networkInfo ->
+                if (vpnController.isScanRunning) return@collectLatest
                 val isWhitelisted = deviceStateManager.isCurrentNetworkWhitelisted.value
                 logger.debug(
                     "Network: ${networkInfo?.networkName}, AutoSecure: ${networkInfo?.isAutoSecureOn}, Whitelisted: $isWhitelisted",

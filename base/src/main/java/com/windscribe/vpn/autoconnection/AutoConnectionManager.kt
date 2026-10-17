@@ -127,6 +127,12 @@ class AutoConnectionManager(
         }
     }
 
+    fun stopForScanner() {
+        stop()
+        attemptJob?.cancel()
+        attemptJob = null
+    }
+
     private fun connectionAttempt(
         attempt: Int = 0,
         protocolInformation: ProtocolInformation? = null,
@@ -214,6 +220,7 @@ class AutoConnectionManager(
 
     suspend fun connectInForeground() =
         withContext(Dispatchers.IO) {
+            if (vpnController.get().isScanRunning) return@withContext false
             suspendCancellableCoroutine<Boolean> { it ->
                 stop()
                 this@AutoConnectionManager.continuation = it
@@ -261,6 +268,7 @@ class AutoConnectionManager(
 
     suspend fun changeProtocolInForeground() =
         withContext(Dispatchers.IO) {
+            if (vpnController.get().isScanRunning) return@withContext false
             suspendCancellableCoroutine<Boolean> { it ->
                 isEnabled = true
                 this@AutoConnectionManager.continuation = it

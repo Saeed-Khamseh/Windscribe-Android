@@ -40,6 +40,10 @@ class DisconnectService : Service() {
         startId: Int,
     ): Int {
         intent?.let {
+            if (controller.isScanRunning) {
+                stopSelf(startId)
+                return START_NOT_STICKY
+            }
             scope.launch {
                 logger.info("Stopping vpn services from notification.")
                 preferencesHelper.globalUserConnectionPreference = false

@@ -96,6 +96,7 @@ abstract class VpnBackend(
     }
 
     private fun handleNetworkInfoUpdate(networkInfo: NetworkInfo?) {
+        if (appContext.vpnController.isScanRunning) return
         // Prevent duplicate processing of network changes
         if (isHandlingNetworkChange) {
             vpnLogger.debug("Already handling network change, ignoring duplicate event.")
@@ -182,7 +183,7 @@ abstract class VpnBackend(
             mainScope.launch {
                 try {
                     val selectedIp = preferencesHelper.selectedIp
-                    val pinnedLocation = getPinnedIpForSelectedCity()
+                    val pinnedLocation = if (appContext.vpnController.isScanRunning) null else getPinnedIpForSelectedCity()
                     val shouldCheckPinning = pinnedLocation?.second != null
                     val hasPinnedNodeMismatch =
                         shouldCheckPinning &&

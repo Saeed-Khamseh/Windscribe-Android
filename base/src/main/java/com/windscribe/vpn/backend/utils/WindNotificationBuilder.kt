@@ -30,6 +30,7 @@ import com.windscribe.vpn.backend.VPNState.Status.ProtocolSwitch
 import com.windscribe.vpn.backend.VPNState.Status.UnsecuredNetwork
 import com.windscribe.vpn.constants.NotificationConstants
 import com.windscribe.vpn.repository.ServerListRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.services.DisconnectService
 import com.windscribe.vpn.state.VPNConnectionStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -51,6 +52,7 @@ class WindNotificationBuilder
         val scope: CoroutineScope,
         val serverListRepository: ServerListRepository,
         private val preferencesHelper: PreferencesHelper,
+        private val scanSession: ScanSession = ScanSession(),
     ) {
         private companion object {
             const val DISCONNECT_ACTION_REQUEST_CODE = 200
@@ -68,6 +70,8 @@ class WindNotificationBuilder
         private val logger = LoggerFactory.getLogger("vpn")
 
         fun buildNotification(status: Status): Notification {
+            notificationBuilder.clearActions()
+            setContentIntent()
             val location = notificationTitle
             val icon = getDefaultIcon(status)
             val message = getStatusMessage(status, location)
@@ -97,7 +101,6 @@ class WindNotificationBuilder
         fun cancelNotification(notificationId: Int) {
             try {
                 notificationManager.cancel(notificationId)
-                notificationManager.cancelAll()
             } catch (e: Exception) {
                 logger.debug(e.toString())
             }
@@ -145,7 +148,7 @@ class WindNotificationBuilder
                         DISCONNECT_ACTION_LABEL,
                         disconnectPendingIntent,
                     ).build()
-            notificationBuilder.addAction(disconnectAction)
+            if (!scanSession.active.value) notificationBuilder.addAction(disconnectAction)
 
             val contentPendingIntent = createContentPendingIntent(context)
             notificationBuilder.setContentIntent(contentPendingIntent)

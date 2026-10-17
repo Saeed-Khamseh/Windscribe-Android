@@ -60,6 +60,7 @@ import com.windscribe.vpn.repository.StaticIpRepository
 import com.windscribe.vpn.repository.UnblockWgParamsRepository
 import com.windscribe.vpn.repository.UserRepository
 import com.windscribe.vpn.repository.WgConfigRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.serverlist.dao.ConfigFileDao
 import com.windscribe.vpn.serverlist.dao.DatacenterAndLocationDao
 import com.windscribe.vpn.serverlist.dao.DatacenterDao
@@ -478,6 +479,7 @@ open class BaseApplicationModule {
         openVPNBackend: OpenVPNBackend,
         iKev2VpnBackend: IKev2VpnBackend,
         wireguardBackend: WireguardBackend,
+        scanSession: ScanSession,
     ): VpnBackendHolder =
         VpnBackendHolder(
             coroutineScope,
@@ -485,6 +487,7 @@ open class BaseApplicationModule {
             iKev2VpnBackend,
             wireguardBackend,
             openVPNBackend,
+            scanSession,
         )
 
     @Provides
@@ -497,6 +500,7 @@ open class BaseApplicationModule {
         trafficCounter: TrafficCounter,
         serverListRepository: ServerListRepository,
         preferencesHelper: PreferencesHelper,
+        scanSession: ScanSession,
     ): WindNotificationBuilder =
         WindNotificationBuilder(
             notificationManager,
@@ -506,6 +510,7 @@ open class BaseApplicationModule {
             scope,
             serverListRepository,
             preferencesHelper,
+            scanSession,
         )
 
     @Provides

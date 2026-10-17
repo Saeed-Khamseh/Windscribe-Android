@@ -4,6 +4,7 @@
 
 package com.windscribe.vpn.services.ping
 
+import android.net.Network
 import android.os.Build.VERSION
 import android.os.Build.VERSION_CODES
 import android.system.Os
@@ -36,6 +37,7 @@ object Ping {
     suspend fun run(
         dest: InetAddress,
         timeoutMs: Int,
+        network: Network? = null,
     ): Long =
         withContext(Dispatchers.IO) {
             val isV6 = dest is Inet6Address
@@ -55,6 +57,7 @@ object Ping {
             }
 
             try {
+                network?.bindSocket(fd)
                 setLowDelay(fd)
                 val pollFd =
                     StructPollfd().apply {
