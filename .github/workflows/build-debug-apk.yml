@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -105,3 +105,23 @@ jobs:
                       important = [line for line in lines if line.startswith('e: ') or 'error:' in line or ' FAILED' in line or 'What went wrong' in line]
                       summary.write('\n### ' + path + '\n```text\n' + ''.join(important[-60:] + lines[-100:]) + '\n```\n')
           PYTHON
+      - name: Return build diagnostics through Git
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/feat/network-scanner'
+        run: |
+          python3 - <<'PYTHON'
+          import os
+          lines = open('scanner-build.log').readlines() if os.path.exists('scanner-build.log') else []
+          selected = set()
+          for index, line in enumerate(lines):
+              if line.startswith('e: ') or 'error:' in line or ' FAILED' in line or 'What went wrong' in line or 'Caused by:' in line:
+                  selected.update(range(max(0, index - 1), min(len(lines), index + 5)))
+          selected.update(range(max(0, len(lines) - 25), len(lines)))
+          with open('/tmp/scanner-build-diagnostics.txt', 'w') as report:
+              report.write('Build commit: ' + os.environ['GITHUB_SHA'] + '\n')
+              report.writelines(lines[index] for index in sorted(selected))
+          PYTHON
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          REPORT_REF="refs/notes/network-scanner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git notes --ref="$REPORT_REF" add -F /tmp/scanner-build-diagnostics.txt "$GITHUB_SHA"
+          git push origin "$REPORT_REF"
