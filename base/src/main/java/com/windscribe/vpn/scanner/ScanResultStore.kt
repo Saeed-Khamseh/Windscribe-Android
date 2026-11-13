@@ -51,6 +51,8 @@ data class ScanResultEntity(
     val downloadKbps: Long?,
     val verifyError: String?,
     val score: Double,
+    /** Consecutive failures as the first attempt of a connect. Two demote the route. */
+    val consecutiveFailures: Int = 0,
 )
 
 @Dao
@@ -68,6 +70,33 @@ abstract class ScanResultDao {
     abstract suspend fun trim(
         networkName: String,
         keep: Int,
+    )
+
+    @Query(
+        "SELECT consecutiveFailures FROM scan_result WHERE networkName = :networkName AND cityId = :cityId AND nodeHostname = :node " +
+            "AND protocol = :protocol AND port = :port AND tweak = :tweak ORDER BY timestampMs DESC LIMIT 1",
+    )
+    abstract suspend fun failures(
+        networkName: String,
+        cityId: Int,
+        node: String,
+        protocol: String,
+        port: Int,
+        tweak: String,
+    ): Int?
+
+    @Query(
+        "UPDATE scan_result SET consecutiveFailures = :failures WHERE networkName = :networkName AND cityId = :cityId " +
+            "AND nodeHostname = :node AND protocol = :protocol AND port = :port AND tweak = :tweak",
+    )
+    abstract suspend fun setFailures(
+        networkName: String,
+        cityId: Int,
+        node: String,
+        protocol: String,
+        port: Int,
+        tweak: String,
+        failures: Int,
     )
 
     @Query("DELETE FROM scan_result WHERE networkName = :networkName")
@@ -103,6 +132,29 @@ class ScanResultStore
         suspend fun load(networkName: String): List<ScanResult> = dao.forNetwork(networkName).map { it.toResult() }
 
         suspend fun clear(networkName: String) = dao.clear(networkName)
+
+        /** Like [load], with each route's demotion count. */
+        suspend fun loadSaved(networkName: String): List<SavedRoute> =
+            dao.forNetwork(networkName).map { SavedRoute(it.toResult(), it.consecutiveFailures) }
+
+        /**
+         * Records how a saved route did as the first attempt of a connect. A success resets the
+         * count. Returns the new count.
+         */
+        suspend fun recordOutcome(
+            networkName: String,
+            candidate: ScanCandidate,
+            success: Boolean,
+        ): Int {
+            val tweak = candidate.tweak.key
+            val current =
+                dao.failures(networkName, candidate.cityId, candidate.nodeHostname, candidate.protocol, candidate.port, tweak) ?: 0
+            val next = SavedRouteChooser.nextFailures(current, success)
+            if (next != current) {
+                dao.setFailures(networkName, candidate.cityId, candidate.nodeHostname, candidate.protocol, candidate.port, tweak, next)
+            }
+            return next
+        }
 
         private fun ScanResult.toEntity(network: String) =
             ScanResultEntity(

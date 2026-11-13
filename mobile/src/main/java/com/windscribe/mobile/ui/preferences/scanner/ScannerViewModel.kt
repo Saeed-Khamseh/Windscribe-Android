@@ -18,6 +18,7 @@ import com.windscribe.vpn.scanner.ScanRouteConnector
 import com.windscribe.vpn.scanner.ScanService
 import com.windscribe.vpn.scanner.ScanState
 import com.windscribe.vpn.scanner.ScanTweak
+import com.windscribe.vpn.scanner.ScannerSettings
 import com.windscribe.vpn.scanner.isRunning
 import com.windscribe.vpn.scanner.isTerminal
 import com.windscribe.vpn.state.DeviceStateManager
@@ -112,6 +113,9 @@ abstract class ScannerViewModel : ViewModel() {
     abstract val state: StateFlow<ScannerUiState>
     abstract val custom: StateFlow<CustomScanState>
     abstract val events: Flow<ScannerEvent>
+    abstract val trySavedFirst: StateFlow<Boolean>
+
+    abstract fun onTrySavedFirstChanged(enabled: Boolean)
 
     abstract fun startQuickScan()
 
@@ -149,6 +153,7 @@ class ScannerViewModelImpl
         private val inventoryLoader: ScanInventoryLoader,
         private val connector: ScanRouteConnector,
         private val deviceStateManager: DeviceStateManager,
+        private val settings: ScannerSettings,
     ) : ScannerViewModel() {
         private val logger = LoggerFactory.getLogger("scanner")
 
@@ -160,6 +165,9 @@ class ScannerViewModelImpl
         private val stopRequested = MutableStateFlow(false)
         private val eventChannel = Channel<ScannerEvent>(Channel.BUFFERED)
         override val events: Flow<ScannerEvent> = eventChannel.receiveAsFlow()
+        override val trySavedFirst: StateFlow<Boolean> = settings.trySavedFirst
+
+        override fun onTrySavedFirstChanged(enabled: Boolean) = settings.setTrySavedFirst(enabled)
 
         override val state: StateFlow<ScannerUiState> =
             combine(scanner.state, scanner.found, saved, dismissed, stopRequested) { scan, found, saved, dismissed, stopRequested ->

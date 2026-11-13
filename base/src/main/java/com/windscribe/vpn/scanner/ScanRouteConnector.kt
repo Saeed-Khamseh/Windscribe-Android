@@ -59,6 +59,7 @@ class ScanRouteConnector
         private val userRepository: Lazy<UserRepository>,
         private val autoConnectionManager: AutoConnectionManager,
         private val scope: CoroutineScope,
+        private val tweakBaseline: TweakBaseline,
     ) {
         private val logger = LoggerFactory.getLogger(SCANNER_LOG)
 
@@ -96,6 +97,8 @@ class ScanRouteConnector
             val route = routeFor(candidate, servers.map { it.hostname })
             logger.info("Connecting with scan result {} as {}", candidate, route)
             // Persistently: this is the user's choice, not a measurement.
+            // The tweaks are the user's now: nothing for a saved route to restore later.
+            tweakBaseline.clear()
             ScanTweakApplier.apply(prefs, candidate.tweak)
             if (candidate.tweak != ScanTweak.None) prefs.isAntiCensorshipManualMode = true
 

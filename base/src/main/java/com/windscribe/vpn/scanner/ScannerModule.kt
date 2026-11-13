@@ -40,4 +40,11 @@ object ScannerModule {
     @Provides
     @Singleton
     fun provideTrafficProbe(app: Windscribe): TrafficProbe = JavaNetTrafficProbe(vpnNetwork = { JavaNetTrafficProbe.findVpnNetwork(app) })
+
+    @Provides
+    @Singleton
+    fun provideTweakBaseline(
+        preferences: PrefsTweakPreferences,
+        settings: ScannerSettings,
+    ): TweakBaseline = TweakBaseline(preferences, settings)
 }

@@ -67,6 +67,7 @@ import com.windscribe.vpn.repository.StaticIpRepository
 import com.windscribe.vpn.repository.UnblockWgParamsRepository
 import com.windscribe.vpn.repository.UserRepository
 import com.windscribe.vpn.repository.WgConfigRepository
+import com.windscribe.vpn.scanner.SavedRouteManager
 import com.windscribe.vpn.serverlist.dao.ConfigFileDao
 import com.windscribe.vpn.serverlist.dao.DatacenterAndLocationDao
 import com.windscribe.vpn.serverlist.dao.DatacenterDao
@@ -662,6 +663,7 @@ open class BaseApplicationModule {
         apiManager: IApiCallManager,
         preferencesHelper: PreferencesHelper,
         logRepository: Lazy<LogRepository>,
+        savedRoutes: Lazy<SavedRouteManager>,
     ): AutoConnectionManager =
         AutoConnectionManager(
             scope,
@@ -673,6 +675,7 @@ open class BaseApplicationModule {
             apiManager,
             preferencesHelper,
             logRepository,
+            savedRoutes,
         )
 
     @Provides

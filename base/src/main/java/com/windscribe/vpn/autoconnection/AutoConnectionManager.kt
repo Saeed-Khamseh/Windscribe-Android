@@ -17,6 +17,7 @@ import com.windscribe.vpn.localdatabase.tables.NetworkInfo
 import com.windscribe.vpn.repository.CallResult
 import com.windscribe.vpn.repository.ConnectionDataRepository
 import com.windscribe.vpn.repository.LogRepository
+import com.windscribe.vpn.scanner.SavedRouteManager
 import com.windscribe.vpn.state.ConnectionPolicy
 import com.windscribe.vpn.state.NetworkInfoManager
 import com.windscribe.vpn.state.VPNConnectionStateManager
@@ -50,6 +51,7 @@ class AutoConnectionManager(
     private val apiManager: IApiCallManager,
     private val preferencesHelper: PreferencesHelper,
     private val logRepository: Lazy<LogRepository>,
+    private val savedRoutes: Lazy<SavedRouteManager>,
 ) {
     private var continuation: CancellableContinuation<Boolean>? = null
 
@@ -290,7 +292,8 @@ class AutoConnectionManager(
 
     suspend fun connectInForeground(source: ConnectSource) =
         withContext(Dispatchers.IO) {
-            val preferred = nextPreferred.also { nextPreferred = null }
+            // The given route, else the best saved scan result for a user connect (see SavedRouteManager).
+            val preferred = savedRoutes.get().resolve(source, nextPreferred.also { nextPreferred = null })
             // At boot the watcher and BootWorker fire milliseconds apart, and the loser's connect
             // timer would tear down the winner's session. Checked here, not by each caller.
             //
@@ -321,6 +324,7 @@ class AutoConnectionManager(
                         protocolInformation = preferred?.toProtocolInformation(),
                         hostname = preferred?.hostname,
                     )
+                savedRoutes.get().recordOutcome(connectionResult)
                 if (connectionResult.status == VPNState.Status.Connected) {
                     isEnabled = false
                     stop()

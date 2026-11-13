@@ -117,6 +117,35 @@ API call). `trafficOk` requires the download to complete.
 3. **Saved routes**: try-first logic on connect, with tests.
 4. **Field test**: tune timeouts, ordering, scoring from in-country logs (log tag `scanner`).
 
+## Status
+
+Phases 1-3 are implemented. They compile for `mobile` and `tv` (fdroid flavour) and the `base`
+unit tests pass. Nothing has been run on a device or emulator yet; phase 4 is the first real run.
+
+Behaviour worth knowing when testing:
+
+- A scan disconnects the VPN, and the kill switch does not block traffic while a scan runs
+  (probes need the plain network). Blocking returns through the normal policy when the scan ends.
+- A scan needs split tunneling to leave Windscribe inside the tunnel; otherwise every route is
+  reported as "connected but could not measure".
+- Tapping a result connects with that city, node, protocol and port first and keeps its tweak.
+- "Try saved routes first" (scanner screen, default on): later connects on the same network try
+  the best saved route first. Skipped for custom configs, static IPs, manual protocol mode,
+  per-network preferred protocol and decoy traffic. A route that fails twice in a row as the first
+  attempt is ignored until a new scan verifies it. Results older than 14 days are ignored.
+- Tweaks applied automatically by a saved route are undone on the next connect that uses no saved
+  route, unless the user changed the Anti-Censorship settings in between.
+
+## Field test checklist (phase 4)
+
+1. Install the APK from the `Build Android debug APK` workflow run (artifact
+   `windscribe-fdroid-debug-apk`, ARM64).
+2. Log in, let the server list load, then open Preferences > Connection > Anti-Censorship >
+   Find working servers and run Quick scan.
+3. Note: how long it took, how many routes were probed / tested / working, and whether a tapped
+   route really connects and carries traffic.
+4. Send the debug log lines from the `scanner` logger (filter on `scanner`), not the full log.
+
 ## Local verification
 
 ```bash

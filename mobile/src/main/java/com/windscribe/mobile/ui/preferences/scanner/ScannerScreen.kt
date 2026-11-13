@@ -63,6 +63,7 @@ import com.windscribe.mobile.R
 import com.windscribe.mobile.ui.common.NextButton
 import com.windscribe.mobile.ui.common.PreferenceBackground
 import com.windscribe.mobile.ui.common.ScreenDescription
+import com.windscribe.mobile.ui.common.SwitchItemView
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.helper.hapticClickable
@@ -92,6 +93,7 @@ import com.windscribe.vpn.R as BaseR
 private enum class PendingScan { Quick, Custom }
 
 class ScannerActions(
+    val onTrySavedFirst: (Boolean) -> Unit = {},
     val onQuickScan: () -> Unit = {},
     val onCustomScan: () -> Unit = {},
     val onStop: () -> Unit = {},
@@ -114,6 +116,7 @@ class ScannerActions(
 fun ScannerScreen(viewModel: ScannerViewModel = hiltViewModel<ScannerViewModelImpl>()) {
     val state by viewModel.state.collectAsState()
     val custom by viewModel.custom.collectAsState()
+    val trySavedFirst by viewModel.trySavedFirst.collectAsState()
     val context = LocalContext.current
     val navController = LocalNavController.current
     var pending by remember { mutableStateOf<PendingScan?>(null) }
@@ -184,8 +187,10 @@ fun ScannerScreen(viewModel: ScannerViewModel = hiltViewModel<ScannerViewModelIm
     ScannerContent(
         state = state,
         custom = custom,
+        trySavedFirst = trySavedFirst,
         actions =
             ScannerActions(
+                onTrySavedFirst = viewModel::onTrySavedFirstChanged,
                 onQuickScan = { startScan(PendingScan.Quick) },
                 onCustomScan = { startScan(PendingScan.Custom) },
                 onStop = viewModel::stopScan,
@@ -208,6 +213,7 @@ fun ScannerContent(
     state: ScannerUiState,
     custom: CustomScanState,
     actions: ScannerActions,
+    trySavedFirst: Boolean = true,
 ) {
     val navController = LocalNavController.current
     PreferenceBackground {
@@ -224,7 +230,7 @@ fun ScannerContent(
                         .verticalScroll(rememberScrollState()),
             ) {
                 when (state.phase) {
-                    ScannerPhase.Setup -> SetupContent(state, custom, actions)
+                    ScannerPhase.Setup -> SetupContent(state, custom, actions, trySavedFirst)
                     ScannerPhase.Running -> RunningContent(state, actions)
                     ScannerPhase.Results -> ResultsContent(state, actions)
                 }
@@ -240,6 +246,7 @@ private fun SetupContent(
     state: ScannerUiState,
     custom: CustomScanState,
     actions: ScannerActions,
+    trySavedFirst: Boolean,
 ) {
     ScreenDescription(stringResource(BaseR.string.scan_description))
     Spacer(modifier = Modifier.height(16.dp))
@@ -259,6 +266,14 @@ private fun SetupContent(
     }
     Spacer(modifier = Modifier.height(16.dp))
     QuickScanCard(actions.onQuickScan)
+    Spacer(modifier = Modifier.height(16.dp))
+    SwitchItemView(
+        title = BaseR.string.scan_try_saved_first,
+        icon = R.drawable.ic_anti_censorship_icon,
+        description = BaseR.string.scan_try_saved_first_description,
+        enabled = trySavedFirst,
+        onSelect = actions.onTrySavedFirst,
+    )
     if (state.saved.isNotEmpty()) {
         Spacer(modifier = Modifier.height(24.dp))
         RouteList(

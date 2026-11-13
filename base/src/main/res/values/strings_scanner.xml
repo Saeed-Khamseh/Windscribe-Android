@@ -36,6 +36,9 @@
     <string name="scan_last_stopped">The last scan was stopped before it found a working route.</string>
     <string name="scan_start_failed">Could not start the scan. Keep the app open and try again.</string>
 
+    <string name="scan_try_saved_first">Try saved routes first</string>
+    <string name="scan_try_saved_first_description">On a network with saved working routes, connecting tries the best one first, then falls back to the usual order. Not used with a manual protocol, a preferred protocol for the network, static IPs, custom configs or decoy traffic.</string>
+
     <!-- Running -->
     <string name="scan_preparing">Preparing the scan</string>
     <string name="scan_stage_probing">Stage 1 of 2: probing</string>
