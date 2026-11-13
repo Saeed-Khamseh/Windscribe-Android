@@ -34,6 +34,7 @@ import com.windscribe.vpn.Windscribe.Companion.appContext
 import com.windscribe.vpn.api.response.PushNotificationAction
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants.DARK_THEME
 import com.windscribe.vpn.billing.GooglePlaySubscriptionUrl
+import com.windscribe.vpn.scanner.ScanService
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -197,6 +198,12 @@ class AppStartActivity : AppCompatActivity() {
             }
             "user_expired", "user_downgraded" -> {
                 appContext.workManager.updateSession()
+            }
+            // The scan notification. Takes no data, so a forged extra can do nothing more than
+            // open a screen the user can open anyway. Cleared so a recreation does not push it twice.
+            ScanService.TYPE_OPEN_SCANNER -> {
+                viewmodel.requestDeepLink(Screen.Scanner.route)
+                intent?.removeExtra(ScanService.EXTRA_TYPE)
             }
         }
     }

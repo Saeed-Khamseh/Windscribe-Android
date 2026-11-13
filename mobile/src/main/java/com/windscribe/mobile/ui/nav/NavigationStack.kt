@@ -61,6 +61,7 @@ import com.windscribe.mobile.ui.preferences.main.MainMenuScreen
 import com.windscribe.mobile.ui.preferences.network_details.NetworkDetailScreen
 import com.windscribe.mobile.ui.preferences.network_options.NetworkOptionsScreen
 import com.windscribe.mobile.ui.preferences.robert.RobertScreen
+import com.windscribe.mobile.ui.preferences.scanner.ScannerScreen
 import com.windscribe.mobile.ui.preferences.split_tunnel.SplitTunnelScreen
 import com.windscribe.mobile.ui.preferences.ticket.TicketScreen
 import com.windscribe.mobile.ui.upgrade.UpgradeScreen
@@ -150,6 +151,9 @@ private fun NavGraphBuilder.addNavigationScreens() {
     }
     slidingComposable(route = Screen.AntiCensorship.route) {
         AntiCensorshipScreen()
+    }
+    slidingComposable(route = Screen.Scanner.route) {
+        ScannerScreen()
     }
     slidingComposable(route = Screen.Robert.route) {
         RobertScreen()

@@ -37,6 +37,7 @@ import com.windscribe.vpn.repository.NotificationRepository
 import com.windscribe.vpn.repository.RepositoryState
 import com.windscribe.vpn.repository.ServerListRepository
 import com.windscribe.vpn.repository.UserRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.serverlist.entity.ConfigFile
 import com.windscribe.vpn.serverlist.entity.Datacenter
 import com.windscribe.vpn.serverlist.entity.DatacenterAndLocation
@@ -506,6 +507,8 @@ class ConnectionViewmodelImpl
         }
 
         private fun handleError(state: VPNState) {
+            // A scan fails most of its connects on purpose; each is recorded as a result, not a toast.
+            if (ScanSession.active) return
             viewModelScope.launch(Dispatchers.IO) {
                 if (state.error?.showError == true && state.error?.message != null) {
                     _toastMessage.emit(ToastMessage.Raw(state.error!!.message))

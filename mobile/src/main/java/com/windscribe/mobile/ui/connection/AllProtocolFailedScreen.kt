@@ -27,6 +27,7 @@ import com.windscribe.mobile.ui.common.NextButton
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
 import com.windscribe.mobile.ui.nav.LocalNavController
+import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font16
 import com.windscribe.mobile.ui.theme.font24
@@ -49,6 +50,11 @@ fun AllProtocolFailedScreen(appStartActivityViewModel: AppStartActivityViewModel
             appStartActivityViewModel.autoConnectionModeCallback?.onCancel()
             navController.popBackStack()
         },
+        onScanClick = {
+            appStartActivityViewModel.autoConnectionModeCallback?.onScanClicked()
+            navController.popBackStack()
+            navController.navigate(Screen.Scanner.route)
+        },
     )
 }
 
@@ -60,6 +66,7 @@ fun AllProtocolFailedScreen(appStartActivityViewModel: AppStartActivityViewModel
 fun AllProtocolFailedContent(
     onSendLogClick: () -> Unit,
     onCancelClick: () -> Unit,
+    onScanClick: () -> Unit = {},
 ) {
     @Suppress("ktlint:standard:max-line-length")
     val networkHatesUsDescription =
@@ -106,6 +113,9 @@ fun AllProtocolFailedContent(
                 modifier = Modifier.padding(horizontal = 8.dp),
             )
             Spacer(modifier = Modifier.padding(top = 24.dp))
+            NextButton(Modifier, text = stringResource(com.windscribe.vpn.R.string.scan_for_working_servers), true) {
+                onScanClick()
+            }
             NextButton(Modifier, text = stringResource(com.windscribe.vpn.R.string.send_debug_log), true) {
                 onSendLogClick()
             }

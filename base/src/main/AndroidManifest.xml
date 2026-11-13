@@ -82,6 +82,18 @@
             </intent-filter>
         </service>
         <!-- DisconnectService is gone: the single service handles ACTION_DISCONNECT itself. -->
+        <!--
+          Foreground service that owns a running network scan (see docs/features/NETWORK_SCANNER.md).
+          Not exported: started by the app only.
+        -->
+        <service
+            android:name=".scanner.ScanService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Network scan - tests which servers, protocols and ports work on the current network and reports progress to the user" />
+        </service>
         <service
             android:name=".services.VpnTileService"
             android:icon="@drawable/ic_tile_connect"

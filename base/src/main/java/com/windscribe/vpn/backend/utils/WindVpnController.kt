@@ -243,11 +243,11 @@ open class WindVpnController
                     .getFavouritesAsync()
                     .firstOrNull { it.id == selectedCity && it.pinnedNodeIp != null }
                     ?.pinnedNodeIp
-            // A scan asks for one specific node: neither the favourite's pin nor the force-node
-            // parameter may substitute another.
-            val scanning = ScanSession.active
+            // A scan, or a connect with a scanned route, asks for one specific node: neither the
+            // favourite's pin nor the force-node parameter may substitute another.
+            val explicitNode = ScanSession.active || hostname != null
             val pinnedNode =
-                nodes.firstOrNull { WindUtilities.hostnamesMatch(it.hostname, pinnedIp) }.takeUnless { scanning }
+                nodes.firstOrNull { WindUtilities.hostnamesMatch(it.hostname, pinnedIp) }.takeUnless { explicitNode }
             // Random node
             var randomIndex = Util.getRandomNode(lastUsedRandomIndex, attempt, nodes)
             // Node if hostname is provided to retry same hostname
@@ -257,7 +257,7 @@ open class WindVpnController
                 }
             }
             // Node with forced hostname from advance parameter
-            val forcedNodeIndex = if (scanning) -1 else getForcedNodeIndex(nodes)
+            val forcedNodeIndex = if (explicitNode) -1 else getForcedNodeIndex(nodes)
             if (forcedNodeIndex != -1) {
                 logger.debug("Forcing node to {}", nodes[forcedNodeIndex])
                 randomIndex = forcedNodeIndex

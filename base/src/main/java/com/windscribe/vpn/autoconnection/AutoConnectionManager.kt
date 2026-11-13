@@ -153,12 +153,15 @@ class AutoConnectionManager(
      * @param allowNodeRetry whether a failure may retry once on a different node. True only for the
      * first protocol: once failover walks the list, the next protocol is the retry. Separate from
      * [attempt], which also selects the node.
+     * @param hostname a node to connect to. First attempt only: a retry on another node is the point
+     * of the retry, so the recursive call below does not pass it.
      */
     private fun connectionAttempt(
         source: ConnectSource,
         attempt: Int = 0,
         protocolInformation: ProtocolInformation? = null,
         allowNodeRetry: Boolean = true,
+        hostname: String? = null,
     ): VPNState {
         attemptJob?.cancel()
         return try {
@@ -176,6 +179,7 @@ class AutoConnectionManager(
                     connectionId = newConnectionId,
                     protocolInformation = protocolInformation,
                     attempt = attempt,
+                    hostname = hostname,
                 )
                 val vpnState =
                     vpnConnectionStateManager
@@ -197,6 +201,7 @@ class AutoConnectionManager(
                                             connectionId = newConnectionId,
                                             protocolInformation = protocolInformation,
                                             attempt = attempt,
+                                            hostname = hostname,
                                         )
                                         return@first false
                                     } else {
@@ -215,6 +220,7 @@ class AutoConnectionManager(
                                         connectionId = newConnectionId,
                                         protocolInformation = protocolInformation,
                                         attempt = attempt,
+                                        hostname = hostname,
                                     )
                                     return@first false
                                 } else if (it.error?.error == VPNState.ErrorType.UserReconnect) {
@@ -266,8 +272,25 @@ class AutoConnectionManager(
         }
     }
 
+    /**
+     * A user connect that tries [preferred] first: its protocol and port, on its node. The normal
+     * failover carries on from the usual order if it fails. Consumed by the next [connectInForeground].
+     */
+    suspend fun connectInForeground(
+        source: ConnectSource,
+        preferred: PreferredRoute,
+    ): Boolean {
+        nextPreferred = preferred
+        return connectInForeground(source)
+    }
+
+    /** Set by the overload above and taken at once by the connect it starts. */
+    @Volatile
+    private var nextPreferred: PreferredRoute? = null
+
     suspend fun connectInForeground(source: ConnectSource) =
         withContext(Dispatchers.IO) {
+            val preferred = nextPreferred.also { nextPreferred = null }
             // At boot the watcher and BootWorker fire milliseconds apart, and the loser's connect
             // timer would tear down the winner's session. Checked here, not by each caller.
             //
@@ -292,7 +315,12 @@ class AutoConnectionManager(
                 stop()
                 this@AutoConnectionManager.continuation = it
                 isEnabled = true
-                val connectionResult = connectionAttempt(source)
+                val connectionResult =
+                    connectionAttempt(
+                        source,
+                        protocolInformation = preferred?.toProtocolInformation(),
+                        hostname = preferred?.hostname,
+                    )
                 if (connectionResult.status == VPNState.Status.Connected) {
                     isEnabled = false
                     stop()
@@ -544,6 +572,11 @@ class AutoConnectionManager(
                         override fun onSendLogClicked() {
                             logger.debug("Send log clicked.")
                             sendLog()
+                        }
+
+                        override fun onScanClicked() {
+                            logger.debug("Scan for working servers clicked; existing auto connect.")
+                            stop()
                         }
                     },
             )

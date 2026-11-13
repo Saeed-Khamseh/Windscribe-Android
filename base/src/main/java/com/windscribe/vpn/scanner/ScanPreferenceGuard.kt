@@ -3,7 +3,6 @@ package com.windscribe.vpn.scanner
 import android.content.Context
 import com.windscribe.vpn.Windscribe
 import com.windscribe.vpn.apppreference.PreferencesHelper
-import com.windscribe.vpn.apppreference.PreferencesKeyConstants
 import com.windscribe.vpn.autoconnection.ProtocolConnectionStatus
 import com.windscribe.vpn.backend.Util
 import com.windscribe.vpn.repository.LocationRepository
@@ -119,24 +118,7 @@ class ScanPreferenceGuard
             return true
         }
 
-        private fun applyTweak(tweak: ScanTweak) {
-            when (tweak) {
-                ScanTweak.None -> Unit
-                ScanTweak.ProtocolTweaks -> prefs.protocolTweaksMode = PreferencesKeyConstants.PROTOCOL_TWEAKS_MANUAL
-                is ScanTweak.AmneziaWg -> {
-                    prefs.protocolTweaksMode = PreferencesKeyConstants.PROTOCOL_TWEAKS_MANUAL
-                    prefs.selectedUnblockWgParam = tweak.presetId
-                }
-
-                ScanTweak.ExtraTlsPadding -> {
-                    prefs.protocolTweaksMode = PreferencesKeyConstants.PROTOCOL_TWEAKS_MANUAL
-                    prefs.extraTlsPaddingEnabled = true
-                }
-
-                is ScanTweak.TlsServerName -> prefs.tlsServerName = tweak.sni
-                ScanTweak.AlternateRouting -> prefs.serverRoutingMode = PreferencesKeyConstants.SERVER_ROUTING_ALTERNATE
-            }
-        }
+        private fun applyTweak(tweak: ScanTweak) = ScanTweakApplier.apply(prefs, tweak)
 
         private fun restoreTweaksLocked() {
             val saved = snapshot ?: return

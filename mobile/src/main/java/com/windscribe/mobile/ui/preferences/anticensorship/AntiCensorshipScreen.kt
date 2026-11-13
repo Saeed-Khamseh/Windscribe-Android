@@ -50,8 +50,10 @@ import com.windscribe.mobile.ui.common.PreferenceBackground
 import com.windscribe.mobile.ui.common.SwitchItemView
 import com.windscribe.mobile.ui.helper.MultiDevicePreview
 import com.windscribe.mobile.ui.helper.PreviewWithNav
+import com.windscribe.mobile.ui.helper.hapticClickable
 import com.windscribe.mobile.ui.model.DropDownStringItem
 import com.windscribe.mobile.ui.nav.LocalNavController
+import com.windscribe.mobile.ui.nav.Screen
 import com.windscribe.mobile.ui.theme.AppColors
 import com.windscribe.mobile.ui.theme.font14
 import com.windscribe.mobile.ui.theme.font16
@@ -153,6 +155,10 @@ fun AntiCensorshipContent(
                         .navigationBarsPadding()
                         .verticalScroll(scrollState),
             ) {
+                FindWorkingServersRow()
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // Protocol Tweaks Section
                 ProtocolTweaksSection(
                     state.protocolTweaksModes,
@@ -187,6 +193,48 @@ fun AntiCensorshipContent(
                 )
             }
         }
+    }
+}
+
+/** Opens the network scanner, which finds the servers, protocols and tweaks that work here. */
+@Composable
+private fun FindWorkingServersRow() {
+    val navController = LocalNavController.current
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    color = MaterialTheme.colorScheme.primaryTextColor.copy(alpha = 0.05f),
+                    shape = RoundedCornerShape(12.dp),
+                ).hapticClickable { navController.navigate(Screen.Scanner.route) }
+                .padding(vertical = 14.dp, horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                stringResource(com.windscribe.vpn.R.string.scan_title),
+                style =
+                    font16.copy(
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Start,
+                        color = MaterialTheme.colorScheme.primaryTextColor,
+                    ),
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                stringResource(com.windscribe.vpn.R.string.scan_entry_subtitle),
+                style = font14.copy(fontWeight = FontWeight.Normal, textAlign = TextAlign.Start),
+                color = MaterialTheme.colorScheme.preferencesSubtitleColor,
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Icon(
+            modifier = Modifier.size(16.dp),
+            painter = painterResource(R.drawable.arrow_right),
+            contentDescription = "",
+            tint = MaterialTheme.colorScheme.primaryTextColor,
+        )
     }
 }
 

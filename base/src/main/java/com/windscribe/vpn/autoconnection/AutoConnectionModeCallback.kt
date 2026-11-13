@@ -12,4 +12,7 @@ interface AutoConnectionModeCallback {
     fun onSetAsPreferredClicked() {}
 
     fun onSwitchToAutoMode() {}
+
+    /** The user chose to scan for working servers instead of giving up. */
+    fun onScanClicked() {}
 }

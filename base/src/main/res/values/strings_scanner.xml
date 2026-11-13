@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Network scanner (fork feature). Kept apart from strings.xml so upstream merges stay clean. -->
+<resources>
+    <!-- Entry points -->
+    <string name="scan_title">Find working servers</string>
+    <string name="scan_entry_subtitle">Test servers, protocols and ports on this network</string>
+    <string name="scan_for_working_servers">Scan for working servers</string>
+
+    <!-- Idle -->
+    <string name="scan_description">Tests servers, protocols and ports on this network and lists the ones that actually carry traffic. Tap a working route to connect with it.</string>
+    <string name="scan_vpn_notice_title">The VPN is disconnected during a scan</string>
+    <string name="scan_vpn_notice">While a scan runs the VPN is turned off and the kill switch does not block traffic. Your connection is not protected until the scan ends.</string>
+    <string name="scan_quick">Quick scan</string>
+    <string name="scan_quick_description">Your favourite and fastest cities with the most censorship-resistant protocols first. Takes up to 6 minutes.</string>
+    <string name="scan_custom_section">Custom scan</string>
+    <string name="scan_cities">Cities</string>
+    <string name="scan_cities_search_hint">Search cities</string>
+    <string name="scan_cities_selected">%1$d selected</string>
+    <string name="scan_cities_clear">Clear</string>
+    <string name="scan_cities_none">No cities match.</string>
+    <string name="scan_cities_unavailable">The server list is not loaded yet. Update it, then try again.</string>
+    <string name="scan_protocols">Protocols</string>
+    <string name="scan_protocols_hint">None selected means all protocols.</string>
+    <string name="scan_tweaks">Tweaks</string>
+    <string name="scan_tweak_protocol_tweaks">Protocol tweaks (OpenVPN)</string>
+    <string name="scan_tweak_tls_padding">Extra TLS padding (Stealth, WStunnel)</string>
+    <string name="scan_tweak_amnezia">AmneziaWG presets (WireGuard)</string>
+    <string name="scan_tweak_alt_routing">Alternate server routing (WireGuard)</string>
+    <string name="scan_tweak_sni_hint">Custom TLS server name (Stealth, WStunnel)</string>
+    <string name="scan_nodes_per_city">Nodes per city</string>
+    <string name="scan_estimate">%1$d routes to probe</string>
+    <string name="scan_estimate_pick_cities">Pick at least one city.</string>
+    <string name="scan_estimate_large">This is a large scan. Only the first %1$d routes are probed and at most %2$d connections are tested. Choose fewer cities, protocols or tweaks to cover them all.</string>
+    <string name="scan_custom_start">Start custom scan</string>
+    <string name="scan_last_failed">The last scan failed: %1$s</string>
+    <string name="scan_last_stopped">The last scan was stopped before it found a working route.</string>
+    <string name="scan_start_failed">Could not start the scan. Keep the app open and try again.</string>
+
+    <!-- Running -->
+    <string name="scan_preparing">Preparing the scan</string>
+    <string name="scan_stage_probing">Stage 1 of 2: probing</string>
+    <string name="scan_stage_verifying">Stage 2 of 2: testing connections</string>
+    <string name="scan_progress_count">%1$d of %2$d</string>
+    <string name="scan_testing_now">Testing now</string>
+    <string name="scan_found_so_far">Working routes found so far</string>
+    <string name="scan_stop">Stop scan</string>
+    <string name="scan_stopping">Stopping the scan</string>
+
+    <!-- Results -->
+    <string name="scan_results_title">Working routes</string>
+    <string name="scan_results_saved_title">Saved for this network</string>
+    <string name="scan_results_stopped_title">Stopped early. Found so far:</string>
+    <string name="scan_results_none">No working route was found. Try a custom scan with more cities or protocols.</string>
+    <string name="scan_results_tap_to_connect">Tap a route to connect with it.</string>
+    <string name="scan_failed_routes">Failed routes (%1$d)</string>
+    <string name="scan_scanned_ago">Scanned %1$s</string>
+    <string name="scan_scan_again">Scan again</string>
+    <string name="scan_latency_ms">%1$d ms</string>
+    <string name="scan_speed_mbps">%1$s Mbit/s</string>
+    <string name="scan_connect_no_network">There is no network connection.</string>
+    <string name="scan_connect_account">Your account cannot connect right now.</string>
+    <string name="scan_connect_unavailable">That location is not available any more. Scan again.</string>
+    <string name="scan_connect_scan_running">A scan is running. Stop it first.</string>
+
+    <!-- Notification -->
+    <string name="scan_channel_progress">Network scan</string>
+    <string name="scan_channel_progress_description">Progress of a scan for working servers.</string>
+    <string name="scan_channel_result">Network scan results</string>
+    <string name="scan_channel_result_description">The result of a scan for working servers.</string>
+    <string name="scan_notification_title">Scanning for working servers</string>
+    <string name="scan_notification_probing">Probing %1$d/%2$d</string>
+    <string name="scan_notification_testing">Testing %1$d/%2$d: %3$s %4$s:%5$s</string>
+    <string name="scan_notification_stopping">Stopping the scan</string>
+    <string name="scan_notification_stop">Stop</string>
+    <string name="scan_notification_finished_none">Scan finished: no working routes</string>
+    <plurals name="scan_notification_finished">
+        <item quantity="one">Scan finished: %1$d working route</item>
+        <item quantity="other">Scan finished: %1$d working routes</item>
+    </plurals>
+    <string name="scan_notification_stopped">Scan stopped</string>
+    <string name="scan_notification_failed">Scan failed: %1$s</string>
+</resources>

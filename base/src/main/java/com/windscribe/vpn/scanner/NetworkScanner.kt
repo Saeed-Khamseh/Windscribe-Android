@@ -56,6 +56,11 @@ class NetworkScanner
         private val _state = MutableStateFlow<ScanState>(ScanState.Idle)
         val state: StateFlow<ScanState> = _state.asStateFlow()
 
+        private val _found = MutableStateFlow<List<ScanResult>>(emptyList())
+
+        /** Verified results of the current (or last) scan so far, in the order they were measured. For progress UI. */
+        val found: StateFlow<List<ScanResult>> = _found.asStateFlow()
+
         private var job: Job? = null
 
         /** Starts a scan. Returns false, and does nothing, if one is already running. */
@@ -67,6 +72,7 @@ class NetworkScanner
             }
             // Before the launch, so no hook point can see a scan that has started but is not flagged.
             ScanSession.begin()
+            _found.value = emptyList()
             _state.value = ScanState.Probing(0, 0)
             job = scope.launch(Dispatchers.Default) { run(request) }
             return true
@@ -157,6 +163,7 @@ class NetworkScanner
                             networkName = network,
                         ),
                     )
+                    _found.value = results.toList()
                 }
                 if (terminal == null) {
                     terminal = ScanState.Finished(ScanRanker.rank(results))
