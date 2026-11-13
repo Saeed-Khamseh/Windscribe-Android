@@ -32,6 +32,7 @@ import com.windscribe.vpn.backend.utils.startForegroundImmediately
 import com.windscribe.vpn.backend.utils.startForegroundSafely
 import com.windscribe.vpn.constants.NotificationConstants
 import com.windscribe.vpn.repository.AdvanceParameterRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.state.ConnectionPolicy
 import com.windscribe.vpn.state.ConnectionPolicyInputs
 import com.windscribe.vpn.state.ShortcutStateManager
@@ -298,6 +299,11 @@ class WindscribeVpnService :
         input: ConnectionPolicy.PolicyInput,
         endingConnectionId: UUID? = null,
     ) {
+        // A scan's failed attempts are not the user's sessions ending; the scanner settles this once.
+        if (ScanSession.active) {
+            logger.debug("A scan is running; not settling the session for {}.", end)
+            return
+        }
         val decided = ConnectionPolicy.serviceModeAfterSession(input, end)
         // The predicate that installs and releases a hold, so the outcome cannot depend on
         // whether a TUN happened to survive into this.

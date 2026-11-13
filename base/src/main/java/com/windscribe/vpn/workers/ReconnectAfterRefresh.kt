@@ -9,6 +9,7 @@ import com.windscribe.vpn.autoconnection.AutoConnectionManager
 import com.windscribe.vpn.backend.utils.ConnectSource
 import com.windscribe.vpn.repository.LocationRepository
 import com.windscribe.vpn.repository.UserRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.state.ConnectionPolicy.ServiceMode
 import com.windscribe.vpn.state.VPNConnectionStateManager
 import kotlinx.coroutines.CoroutineScope
@@ -36,6 +37,8 @@ class ReconnectAfterRefresh
         private val logger = LoggerFactory.getLogger("worker")
 
         suspend fun run() {
+            // The scan has the selected city and node; a refresh must not reconnect over it.
+            if (ScanSession.active) return
             val previousLocation = locationRepository.selectedCity.value
             val updatedLocation = locationRepository.updateLocation()
             if (!userRepository.accountStatusOkay() && !preferencesHelper.isConnectingToConfigured) {

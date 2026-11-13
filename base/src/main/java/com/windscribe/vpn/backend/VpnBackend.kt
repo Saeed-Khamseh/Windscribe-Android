@@ -27,6 +27,7 @@ import com.windscribe.vpn.localdatabase.LocalDbInterface
 import com.windscribe.vpn.localdatabase.tables.NetworkInfo
 import com.windscribe.vpn.repository.AdvanceParameterRepository
 import com.windscribe.vpn.repository.CallResult
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.state.ConnectionPolicy
 import com.windscribe.vpn.state.NetworkInfoManager
 import com.windscribe.vpn.state.VPNConnectionStateManager
@@ -140,6 +141,8 @@ abstract class VpnBackend(
     }
 
     private fun handleNetworkInfoUpdate(networkInfo: NetworkInfo?) {
+        // A scan connects on protocols the network does not prefer; switching back would end its attempt.
+        if (ScanSession.active) return
         // Prevent duplicate processing of network changes
         if (isHandlingNetworkChange) {
             vpnLogger.debug("Already handling network change, ignoring duplicate event.")
@@ -357,6 +360,8 @@ abstract class VpnBackend(
     }
 
     suspend fun getPinnedIpForSelectedCity(): Pair<String, String>? {
+        // A scan visits nodes the favourite did not pin: no pin API call, no "could not pin" dialog.
+        if (ScanSession.active) return null
         val selectedCity = preferencesHelper.selectedCity
         val favourite =
             localDbInterface.getFavouritesAsync().firstOrNull {

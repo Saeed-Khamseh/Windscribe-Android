@@ -10,6 +10,7 @@ import com.windscribe.vpn.backend.utils.ConnectSource
 import com.windscribe.vpn.backend.utils.SYSTEM_DISCONNECT
 import com.windscribe.vpn.backend.utils.WindVpnController
 import com.windscribe.vpn.localdatabase.tables.NetworkInfo
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.state.ConnectionPolicy
 import com.windscribe.vpn.state.ConnectionPolicyInputs
 import com.windscribe.vpn.state.DeviceStateManager
@@ -84,6 +85,8 @@ class AutoConnectWatcher
 
         /** The rules live in [ConnectionPolicy]; this only reacts to them. */
         private fun onNetworkChanged(networkInfo: NetworkInfo?) {
+            // Every scan attempt re-emits the network; reacting would fight the scan for the tunnel.
+            if (ScanSession.active) return
             clearStaleModeOnNewNetwork(networkInfo?.networkName)
             val input = policyInputs.from(networkInfo)
             logger.debug(

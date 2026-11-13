@@ -47,6 +47,7 @@ import com.windscribe.vpn.localdatabase.WindscribeDatabase
 import com.windscribe.vpn.mocklocation.MockLocationManager
 import com.windscribe.vpn.repository.LocationRepository
 import com.windscribe.vpn.repository.UserRepository
+import com.windscribe.vpn.scanner.NetworkScanner
 import com.windscribe.vpn.services.FirebaseManager
 import com.windscribe.vpn.state.AppLifeCycleObserver
 import com.windscribe.vpn.state.ConnectionPolicy
@@ -163,6 +164,10 @@ open class Windscribe : MultiDexApplication() {
     @Inject
     lateinit var locationRepository: Lazy<LocationRepository>
 
+    // Lazy: only the app-start repair needs it, and it should not cost the startup path a graph.
+    @Inject
+    lateinit var networkScanner: Lazy<NetworkScanner>
+
     override fun attachBaseContext(base: Context) {
         super.attachBaseContext(base)
         bindLogDirectory(base)
@@ -209,6 +214,7 @@ open class Windscribe : MultiDexApplication() {
         syncAppLocale()
 
         setUpNewInstallation()
+        applicationScope.launch(Dispatchers.IO) { networkScanner.get().repairIfInterrupted() }
         if (BuildConfig.APP_ID.isNotEmpty()) {
             firebaseManager.initialise()
         }

@@ -50,6 +50,7 @@ import com.windscribe.vpn.repository.CallResult
 import com.windscribe.vpn.repository.EmergencyConnectRepository
 import com.windscribe.vpn.repository.LocationRepository
 import com.windscribe.vpn.repository.WgConfigRepository
+import com.windscribe.vpn.scanner.ScanSession
 import com.windscribe.vpn.serverlist.entity.Server
 import com.windscribe.vpn.state.ConnectionPolicy
 import com.windscribe.vpn.state.ConnectionPolicy.Effect
@@ -91,6 +92,9 @@ enum class ConnectSource {
 
     /** Like [App], but not deduplicated against a live session: relocating one is the point. */
     SessionRefresh,
+
+    /** The network scanner verifying a route. Never driven by failover; see [ScanSession]. */
+    Scanner,
 }
 
 /** The user pressed disconnect. Stands the network down and ends failover. */
@@ -792,8 +796,9 @@ open class WindVpnController
                 }
 
                 ERROR_WG_KEY_LIMIT_EXCEEDED -> {
-                    // With no screen the dialog is never posted, so neither callback ever runs.
-                    if (appContext.activeActivity == null) {
+                    // With no screen the dialog is never posted, so neither callback ever runs. A scan
+                    // verifies many routes unattended and must not stop to ask.
+                    if (appContext.activeActivity == null || ScanSession.active) {
                         logger.info("WireGuard key limit reached with no screen to ask on; ending the attempt.")
                         disconnect(
                             error =
