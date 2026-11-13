@@ -388,6 +388,10 @@ class WindscribeVpnService :
      * the caller's next move is the profile build this covers.
      */
     suspend fun beginBlockingIfRequired() {
+        // A scan's probes are plain sockets; a blocking TUN would black-hole them.
+        if (ScanSession.active) {
+            return
+        }
         if (tunnelManager.hasTunnel) {
             return
         }

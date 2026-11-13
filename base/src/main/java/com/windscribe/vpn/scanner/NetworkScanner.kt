@@ -1,6 +1,7 @@
 package com.windscribe.vpn.scanner
 
 import android.os.SystemClock
+import com.windscribe.common.tunnel.TunnelManager
 import com.windscribe.vpn.autoconnection.AutoConnectionManager
 import com.windscribe.vpn.backend.VPNState
 import com.windscribe.vpn.backend.utils.SYSTEM_DISCONNECT
@@ -8,6 +9,8 @@ import com.windscribe.vpn.backend.utils.WindVpnController
 import com.windscribe.vpn.state.ConnectionPolicy
 import com.windscribe.vpn.state.DeviceStateManager
 import com.windscribe.vpn.state.VPNConnectionStateManager
+import com.windscribe.vpn.state.WatchReason
+import dagger.Lazy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +50,7 @@ class NetworkScanner
         private val stateManager: VPNConnectionStateManager,
         private val deviceStateManager: DeviceStateManager,
         private val autoConnectionManager: AutoConnectionManager,
+        private val tunnelManager: Lazy<TunnelManager>,
     ) {
         private val logger = LoggerFactory.getLogger(SCANNER_LOG)
         private val _state = MutableStateFlow<ScanState>(ScanState.Idle)
@@ -87,6 +91,8 @@ class NetworkScanner
             var terminal: ScanState? = null
             val priorMode = stateManager.serviceMode.value
             val wasTunnelUp = stateManager.isTunnelUp()
+            // A TUN held with no engine is the kill switch's blocking hold.
+            val hadHeldTunnel = !wasTunnelUp && tunnelManager.get().hasTunnel
             try {
                 if (!deviceStateManager.isOnline.value) {
                     terminal = ScanState.Failed("There is no network connection.")
@@ -97,7 +103,9 @@ class NetworkScanner
                 // A failover walk in progress would fight the scan for the connect path.
                 autoConnectionManager.stop()
                 guard.beginSession()
+                verifier.beginScan()
                 takeVpnDown()
+                releaseBlockingHold()
 
                 val inventory = inventoryLoader.load()
                 if (inventory.cities.isEmpty()) {
@@ -162,7 +170,7 @@ class NetworkScanner
                 terminal = ScanState.Failed(e.message ?: e.javaClass.simpleName)
             } finally {
                 withContext(NonCancellable) {
-                    cleanUp(priorMode, wasTunnelUp)
+                    cleanUp(priorMode, wasTunnelUp || hadHeldTunnel || priorMode != null)
                     val finalState = terminal ?: ScanState.Failed("The scan ended unexpectedly.")
                     // What was measured is worth keeping even when the scan was stopped.
                     val kept =
@@ -190,12 +198,23 @@ class NetworkScanner
         }
 
         /**
+         * Probes are plain sockets, so nothing may hold the device back while they run. The hold
+         * (kill switch) is released here and put back by [cleanUp] through the normal policy path.
+         * [ScanSession] stops anything from installing another while the scan runs.
+         */
+        private fun releaseBlockingHold() {
+            if (!stateManager.isTunnelUp() && tunnelManager.get().releaseHeldTunnel()) {
+                logger.info("Released the blocking hold for the length of the scan.")
+            }
+        }
+
+        /**
          * Leaves the app as the scan found it. Order matters: the tunnel down, the preferences back,
          * and only then the flag cleared, so the hooks stay quiet until nothing of ours is left.
          */
         private suspend fun cleanUp(
             priorMode: ConnectionPolicy.ServiceMode?,
-            wasTunnelUp: Boolean,
+            hadSession: Boolean,
         ) {
             runCatching {
                 if (stateManager.isVPNActive()) {
@@ -208,16 +227,34 @@ class NetworkScanner
             runCatching { guard.endSession() }
                 .onFailure { logger.error("Could not restore preferences after the scan.", it) }
             ScanSession.end()
-            // The service's idle state was left alone while the scan ran (see the hook in
-            // WindscribeVpnService.endSession), and connecting cleared it. Put it back.
-            when {
-                priorMode != null -> stateManager.setServiceMode(priorMode)
-                // The user's tunnel was ours to take down, so the service has a session to settle.
-                wasTunnelUp -> controller.endSession(ConnectionPolicy.SessionEnd.SystemDisconnect)
+            // Settled through the ordinary path now that the hooks are quiet: ConnectionPolicy decides
+            // whether blocking applies (a held TUN is established again), and the service publishes
+            // the mode. The end is chosen to reproduce the mode the scan found. Skipped when the
+            // scan found a plain idle app, which has nothing to settle.
+            if (hadSession) {
+                controller.endSession(sessionEndFor(priorMode))
             }
         }
 
-        private companion object {
-            const val DISCONNECT_TIMEOUT_MS = 8_000L
+        companion object {
+            private const val DISCONNECT_TIMEOUT_MS = 8_000L
+
+            /** The session end that leaves the service in [mode] again. Null (connected or idle) is a system end. */
+            internal fun sessionEndFor(mode: ConnectionPolicy.ServiceMode?): ConnectionPolicy.SessionEnd =
+                when (mode) {
+                    is ConnectionPolicy.ServiceMode.Failed -> ConnectionPolicy.SessionEnd.ConnectFailed
+                    ConnectionPolicy.ServiceMode.NoNetwork -> ConnectionPolicy.SessionEnd.NoNetwork
+                    ConnectionPolicy.ServiceMode.AwaitingSession -> ConnectionPolicy.SessionEnd.AwaitingSession
+                    ConnectionPolicy.ServiceMode.AuthFailed -> ConnectionPolicy.SessionEnd.AuthFailed
+                    ConnectionPolicy.ServiceMode.Paused -> ConnectionPolicy.SessionEnd.UserPause
+                    is ConnectionPolicy.ServiceMode.Watching ->
+                        if (mode.reason == WatchReason.StoodDownByUser) {
+                            ConnectionPolicy.SessionEnd.UserDisconnect
+                        } else {
+                            ConnectionPolicy.SessionEnd.SystemDisconnect
+                        }
+
+                    else -> ConnectionPolicy.SessionEnd.SystemDisconnect
+                }
         }
     }

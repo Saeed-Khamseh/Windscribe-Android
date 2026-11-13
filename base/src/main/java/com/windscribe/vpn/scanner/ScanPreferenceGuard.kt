@@ -5,11 +5,13 @@ import com.windscribe.vpn.Windscribe
 import com.windscribe.vpn.apppreference.PreferencesHelper
 import com.windscribe.vpn.apppreference.PreferencesKeyConstants
 import com.windscribe.vpn.autoconnection.ProtocolConnectionStatus
+import com.windscribe.vpn.backend.Util
 import com.windscribe.vpn.repository.LocationRepository
 import dagger.Lazy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withTimeoutOrNull
 import org.slf4j.LoggerFactory
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -27,7 +29,7 @@ import javax.inject.Singleton
 class ScanPreferenceGuard
     @Inject
     constructor(
-        app: Windscribe,
+        private val app: Windscribe,
         private val prefs: PreferencesHelper,
         private val locationRepository: Lazy<LocationRepository>,
     ) {
@@ -55,6 +57,7 @@ class ScanPreferenceGuard
         @Synchronized
         fun beginSession() {
             val current = readCurrent()
+            backUpFiles()
             persist(current)
             snapshot = current
             logger.info("Saved preferences before scanning (city={}, protocol={}).", current.selectedCity, current.selectedProtocol)
@@ -93,6 +96,8 @@ class ScanPreferenceGuard
             val saved = snapshot ?: readPersisted()
             if (saved != null) {
                 restoreAll(saved)
+                // Only with a saved session: with none, "no copy" would wrongly mean "delete".
+                restoreFiles()
             }
             clearPersisted()
             snapshot = null
@@ -108,6 +113,7 @@ class ScanPreferenceGuard
             val saved = readPersisted() ?: return false
             logger.warn("A scan was interrupted; restoring preferences (city={}, protocol={}).", saved.selectedCity, saved.selectedProtocol)
             restoreAll(saved)
+            restoreFiles()
             clearPersisted()
             snapshot = null
             return true
@@ -162,6 +168,43 @@ class ScanPreferenceGuard
             }
             // Through the repository, which also publishes the city the connect path reads.
             locationRepository.get().setSelectedCity(saved.selectedCity)
+        }
+
+        // The connect path overwrites the last selected location and the saved profile on every
+        // attempt (VPNProfileCreator -> Util.saveSelectedLocation / saveProfile). Copies are taken
+        // before the first change and kept on disk, so a repair after a crash can put them back.
+        private val backupDir get() = File(app.filesDir, BACKUP_DIR)
+
+        private fun backUpFiles() {
+            backupDir.apply {
+                deleteRecursively()
+                mkdirs()
+            }
+            for (name in TRACKED_FILES) {
+                val original = File(app.filesDir, name)
+                if (original.isFile) {
+                    runCatching { original.copyTo(File(backupDir, name), overwrite = true) }
+                        .onFailure { logger.error("Could not back up {}.", name, it) }
+                }
+            }
+        }
+
+        // A file with no copy did not exist before the scan, so it is removed.
+        private fun restoreFiles() {
+            for (name in TRACKED_FILES) {
+                val original = File(app.filesDir, name)
+                val copy = File(backupDir, name)
+                runCatching {
+                    if (copy.isFile) {
+                        copy.copyTo(original, overwrite = true)
+                    } else {
+                        original.delete()
+                    }
+                }.onFailure { logger.error("Could not restore {}.", name, it) }
+            }
+            backupDir.deleteRecursively()
+            // The in-memory copy of the profile would otherwise outlive the file it mirrors.
+            Util.clearProfileCache()
         }
 
         private fun readCurrent() =
@@ -227,6 +270,8 @@ class ScanPreferenceGuard
 
         private companion object {
             const val FILE = "scanner_saved_preferences"
+            const val BACKUP_DIR = "scanner_backup"
+            val TRACKED_FILES = listOf(Util.LAST_SELECTED_LOCATION, Util.VPN_PROFILE_NAME)
             const val PUBLISH_TIMEOUT_MS = 2_000L
             const val K_ACTIVE = "active"
             const val K_TWEAKS_MODE = "protocol_tweaks_mode"

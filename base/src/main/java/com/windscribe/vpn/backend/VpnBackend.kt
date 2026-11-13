@@ -639,7 +639,8 @@ abstract class VpnBackend(
         val hold =
             when {
                 handover -> TunHold.ForHandover
-                policyInput != null && ConnectionPolicy.shouldBlockOutsideVpn(policyInput, end) ->
+                // Not during a scan: its probes are plain sockets and a blocking hold would eat them.
+                !ScanSession.active && policyInput != null && ConnectionPolicy.shouldBlockOutsideVpn(policyInput, end) ->
                     TunHold.ForBlocking
 
                 else -> TunHold.None

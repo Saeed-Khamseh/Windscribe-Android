@@ -39,5 +39,5 @@ object ScannerModule {
 
     @Provides
     @Singleton
-    fun provideTrafficProbe(): TrafficProbe = JavaNetTrafficProbe()
+    fun provideTrafficProbe(app: Windscribe): TrafficProbe = JavaNetTrafficProbe(vpnNetwork = { JavaNetTrafficProbe.findVpnNetwork(app) })
 }

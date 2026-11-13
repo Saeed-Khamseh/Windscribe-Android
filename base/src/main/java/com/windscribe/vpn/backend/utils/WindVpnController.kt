@@ -243,7 +243,11 @@ open class WindVpnController
                     .getFavouritesAsync()
                     .firstOrNull { it.id == selectedCity && it.pinnedNodeIp != null }
                     ?.pinnedNodeIp
-            val pinnedNode = nodes.firstOrNull { WindUtilities.hostnamesMatch(it.hostname, pinnedIp) }
+            // A scan asks for one specific node: neither the favourite's pin nor the force-node
+            // parameter may substitute another.
+            val scanning = ScanSession.active
+            val pinnedNode =
+                nodes.firstOrNull { WindUtilities.hostnamesMatch(it.hostname, pinnedIp) }.takeUnless { scanning }
             // Random node
             var randomIndex = Util.getRandomNode(lastUsedRandomIndex, attempt, nodes)
             // Node if hostname is provided to retry same hostname
@@ -253,7 +257,7 @@ open class WindVpnController
                 }
             }
             // Node with forced hostname from advance parameter
-            val forcedNodeIndex = getForcedNodeIndex(nodes)
+            val forcedNodeIndex = if (scanning) -1 else getForcedNodeIndex(nodes)
             if (forcedNodeIndex != -1) {
                 logger.debug("Forcing node to {}", nodes[forcedNodeIndex])
                 randomIndex = forcedNodeIndex
@@ -487,7 +491,8 @@ open class WindVpnController
                 // with blocking on, giving up is exactly when traffic must not be let out, so the
                 // TUN is kept and its watchdog cancelled. Inputs read once, so the publish holds.
                 val input = policyInputs.current()
-                if (ConnectionPolicy.shouldBlockOutsideVpn(input, end)) {
+                // A scan's probes are plain sockets: nothing may hold the device back while it runs.
+                if (!ScanSession.active && ConnectionPolicy.shouldBlockOutsideVpn(input, end)) {
                     if (tunnelManager.get().holdForBlocking()) {
                         logger.info("No reconnect is coming; holding the TUN to block traffic.")
                     }

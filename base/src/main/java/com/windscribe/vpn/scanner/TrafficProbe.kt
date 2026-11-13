@@ -1,12 +1,15 @@
 package com.windscribe.vpn.scanner
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import kotlinx.coroutines.CancellationException
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.InetAddress
 import java.net.InetSocketAddress
-import java.net.Socket
 import java.net.URL
 
 /** What the tunnel carried: connect timings to a public host, and one small download. */
@@ -24,11 +27,18 @@ interface TrafficProbe {
 }
 
 /**
+ * Everything is bound to the VPN network (`TRANSPORT_VPN`): the sockets come from
+ * `Network.socketFactory` and the download from `Network.openConnection`, so the measurement cannot
+ * quietly use the underlying network. With no VPN network, or when binding is refused (split
+ * tunnelling can leave this app outside the tunnel), the result is a failure with the reason; there
+ * is no fallback to the default network.
+ *
  * Three TCP connect timings to an anycast host, then one ~256 KB HTTPS download capped at
  * [downloadCapMs]. [TrafficResult.trafficOk] requires the whole download to arrive: a tunnel that
  * handshakes but drops bulk data must not read as working.
  */
 class JavaNetTrafficProbe(
+    private val vpnNetwork: () -> Network?,
     private val connectHost: String = "1.1.1.1",
     private val connectPort: Int = 443,
     private val downloadUrl: String = "https://speed.cloudflare.com/__down?bytes=$DOWNLOAD_BYTES",
@@ -39,20 +49,35 @@ class JavaNetTrafficProbe(
     private val logger = LoggerFactory.getLogger(SCANNER_LOG)
 
     override suspend fun measure(): TrafficResult {
+        val network =
+            vpnNetwork()
+                ?: return TrafficResult(false, error = "there is no VPN network to measure through")
         val timings = ArrayList<Long>()
         repeat(CONNECT_SAMPLES) {
-            connectOnce()?.let { timings.add(it) }
+            connectOnce(network)?.let { timings.add(it) }
         }
         val latency = timings.sorted().let { if (it.isEmpty()) null else it[it.size / 2] }
         if (latency == null) {
-            return TrafficResult(false, null, null, "no TCP connect to $connectHost:$connectPort through the tunnel")
+            return TrafficResult(
+                false,
+                null,
+                null,
+                "no TCP connect to $connectHost:$connectPort on the VPN network (blocked, or this app is outside the tunnel)",
+            )
         }
-        return download(latency)
+        return download(network, latency)
     }
 
-    private suspend fun connectOnce(): Long? {
-        val socket = Socket()
+    private suspend fun connectOnce(network: Network): Long? {
         val startNs = System.nanoTime()
+        // Unconnected, and bound to the VPN network by its factory.
+        val socket =
+            try {
+                network.socketFactory.createSocket()
+            } catch (e: Exception) {
+                logger.debug("Could not bind a socket to the VPN network: {}", e.toString())
+                return null
+            }
         return try {
             runCancellable(onCancel = { socket.close() }) {
                 socket.connect(InetSocketAddress(InetAddress.getByName(connectHost), connectPort), connectTimeoutMs)
@@ -68,8 +93,16 @@ class JavaNetTrafficProbe(
         }
     }
 
-    private suspend fun download(latency: Long): TrafficResult {
-        val connection = URL(downloadUrl).openConnection() as HttpURLConnection
+    private suspend fun download(
+        network: Network,
+        latency: Long,
+    ): TrafficResult {
+        val connection =
+            try {
+                network.openConnection(URL(downloadUrl)) as HttpURLConnection
+            } catch (e: Exception) {
+                return TrafficResult(false, latency, null, "could not bind the download to the VPN network: ${e.message}")
+            }
         val startNs = System.nanoTime()
         return try {
             runCancellable(onCancel = { connection.disconnect() }) {
@@ -111,5 +144,14 @@ class JavaNetTrafficProbe(
     companion object {
         const val DOWNLOAD_BYTES = 262_144L
         private const val CONNECT_SAMPLES = 3
+
+        /** The device's VPN network, or null when none is up. */
+        @Suppress("DEPRECATION")
+        fun findVpnNetwork(context: Context): Network? {
+            val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return null
+            return manager.allNetworks.firstOrNull { network ->
+                manager.getNetworkCapabilities(network)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+            }
+        }
     }
 }
